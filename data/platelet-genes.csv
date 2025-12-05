@@ -1,0 +1,416 @@
+databaseID,geneName,description
+ComplexPortal:CPX-461,platelet-multimerin_human,155 kDa platelet multimerin complex
+UniProtKB:P06241,FYN,Tyrosine-protein kinase Fyn
+UniProtKB:P06239,LCK,Tyrosine-protein kinase Lck
+UniProtKB:O00443,PIK3C2A,Phosphatidylinositol 4-phosphate 3-kinase C2 domain-containing subunit alpha
+UniProtKB:Q05209,PTPN12,Tyrosine-protein phosphatase non-receptor type 12
+UniProtKB:P63261,ACTG1,"Actin, cytoplasmic 2"
+UniProtKB:O00299,CLIC1,Chloride intracellular channel protein 1
+UniProtKB:O00292,LEFTY2,Left-right determination factor 2
+UniProtKB:O00291,HIP1,Huntingtin-interacting protein 1
+UniProtKB:O00254,F2RL2,Proteinase-activated receptor 3
+UniProtKB:P21333,FLNA,Filamin-A
+UniProtKB:P16234,PDGFRA,Platelet-derived growth factor receptor alpha
+UniProtKB:P16220,CREB1,Cyclic AMP-responsive element-binding protein 1
+UniProtKB:O00206,TLR4,Toll-like receptor 4
+UniProtKB:O00203,AP3B1,AP-3 complex subunit beta-1
+UniProtKB:P63092,GNAS,Guanine nucleotide-binding protein G(s) subunit alpha isoforms short
+UniProtKB:Q92839,HAS1,Hyaluronan synthase 1
+UniProtKB:Q8TF42,UBASH3B,Ubiquitin-associated and SH3 domain-containing protein B
+UniProtKB:Q92819,HAS2,Hyaluronan synthase 2
+UniProtKB:P08311,CTSG,Cathepsin G
+UniProtKB:Q9BWH2,FUNDC2,FUN14 domain-containing protein 2
+UniProtKB:Q5M8T2,SLC35D3,Solute carrier family 35 member D3
+UniProtKB:Q01813,PFKP,"ATP-dependent 6-phosphofructokinase, platelet type"
+UniProtKB:P08123,COL1A2,Collagen alpha-2(I) chain
+UniProtKB:Q9BXX0,EMILIN2,EMILIN-2
+UniProtKB:Q9BXS5,AP1M1,AP-1 complex subunit mu-1
+UniProtKB:Q13976,PRKG1,cGMP-dependent protein kinase 1
+UniProtKB:P43034,PAFAH1B1,Platelet-activating factor acetylhydrolase IB subunit beta
+UniProtKB:Q8IX07,ZFPM1,Zinc finger protein ZFPM1
+UniProtKB:P56945,BCAR1,Breast cancer anti-estrogen resistance protein 1
+UniProtKB:Q92572,AP3S1,AP-3 complex subunit sigma-1
+UniProtKB:Q92570,NR4A3,Nuclear receptor subfamily 4 group A member 3
+UniProtKB:Q8WUD6,CHPT1,Cholinephosphotransferase 1
+UniProtKB:O00391,QSOX1,Sulfhydryl oxidase 1
+UniProtKB:P46940,IQGAP1,Ras GTPase-activating-like protein IQGAP1
+UniProtKB:O00194,RAB27B,Ras-related protein Rab-27B
+UniProtKB:O00186,STXBP3,Syntaxin-binding protein 3
+UniProtKB:Q8IY31,IFT20,Intraflagellar transport protein 20 homolog
+UniProtKB:P16109,SELP,P-selectin
+UniProtKB:P16671,CD36,Platelet glycoprotein 4
+UniProtKB:P16615,ATP2A2,Sarcoplasmic/endoplasmic reticulum calcium ATPase 2
+UniProtKB:Q99969,RARRES2,Retinoic acid receptor responder protein 2
+UniProtKB:Q92560,BAP1,Ubiquitin carboxyl-terminal hydrolase BAP1
+UniProtKB:Q92520,FAM3C,Protein FAM3C
+UniProtKB:P18206,VCL,Vinculin
+UniProtKB:P14770,GP9,Platelet glycoprotein IX
+UniProtKB:P53582,METAP1,Methionine aminopeptidase 1
+UniProtKB:Q86UX7,FERMT3,Fermitin family homolog 3
+UniProtKB:P13224,GP1BB,Platelet glycoprotein Ib beta chain
+UniProtKB:P30101,PDIA3,Protein disulfide-isomerase A3
+UniProtKB:P17706,PTPN2,Tyrosine-protein phosphatase non-receptor type 2
+UniProtKB:O14983,ATP2A1,Sarcoplasmic/endoplasmic reticulum calcium ATPase 1
+UniProtKB:O14964,HGS,Hepatocyte growth factor-regulated tyrosine kinase substrate
+UniProtKB:Q06481,APLP2,Amyloid beta precursor like protein 2
+UniProtKB:Q12866,MERTK,Tyrosine-protein kinase Mer
+UniProtKB:O14786,NRP1,Neuropilin-1
+UniProtKB:Q765P7,MTSS2,Protein MTSS 2
+UniProtKB:O14745,NHERF1,Na(+)/H(+) exchange regulatory cofactor NHE-RF1
+UniProtKB:P13726,F3,Tissue factor
+UniProtKB:Q12794,HYAL1,Hyaluronidase-1
+UniProtKB:P50148,GNAQ,Guanine nucleotide-binding protein G(q) subunit alpha
+ComplexPortal:CPX-117,gp1b-flna_human,Glycoprotein Ib-IX-V-Filamin-A complex
+ComplexPortal:CPX-114,gp1b_human,Glycoprotein Ib-IX-V complex
+UniProtKB:O14498,ISLR,Immunoglobulin superfamily containing leucine-rich repeat protein
+UniProtKB:P23743,DGKA,Diacylglycerol kinase alpha
+UniProtKB:P13473,LAMP2,Lysosome-associated membrane glycoprotein 2
+UniProtKB:Q09472,EP300,Histone acetyltransferase p300
+UniProtKB:Q16760,DGKD,Diacylglycerol kinase delta
+UniProtKB:P40238,MPL,Thrombopoietin receptor
+UniProtKB:Q12965,MYO1E,Unconventional myosin-Ie
+UniProtKB:P60709,ACTB,"Actin, cytoplasmic 1"
+UniProtKB:Q12913,PTPRJ,Receptor-type tyrosine-protein phosphatase eta
+UniProtKB:P23945,FSHR,Follicle-stimulating hormone receptor
+UniProtKB:O14617,AP3D1,AP-3 complex subunit delta-1
+UniProtKB:Q969F9,HPS3,BLOC-2 complex member HPS3
+UniProtKB:P13688,CEACAM1,Cell adhesion molecule CEACAM1
+UniProtKB:P20248,CCNA2,Cyclin-A2
+UniProtKB:P67936,TPM4,Tropomyosin alpha-4 chain
+UniProtKB:P00750,PLAT,Tissue-type plasminogen activator
+UniProtKB:P00747,PLG,Plasminogen
+UniProtKB:P00746,CFD,Complement factor D
+UniProtKB:P00734,F2,Prothrombin
+UniProtKB:Q96JJ7,TMX3,Protein disulfide-isomerase TMX3
+UniProtKB:Q9H3N1,TMX1,Thioredoxin-related transmembrane protein 1
+UniProtKB:Q6YHK3,CD109,CD109 antigen
+UniProtKB:P10124,SRGN,Serglycin
+UniProtKB:Q96AX1,VPS33A,Vacuolar protein sorting-associated protein 33A
+UniProtKB:O95866,MPIG6B,Megakaryocyte and platelet inhibitory receptor G6b
+UniProtKB:P17252,PRKCA,Protein kinase C alpha type
+UniProtKB:Q06033,ITIH3,Inter-alpha-trypsin inhibitor heavy chain H3
+UniProtKB:Q96EU7,C1GALT1C1,C1GALT1-specific chaperone 1
+UniProtKB:P47900,P2RY1,P2Y purinoceptor 1
+UniProtKB:Q9Y2F5,ICE1,Little elongation complex subunit 1
+UniProtKB:P47712,PLA2G4A,Cytosolic phospholipase A2
+UniProtKB:Q9Y5L3,ENTPD2,Ectonucleoside triphosphate diphosphohydrolase 2
+UniProtKB:O75083,WDR1,WD repeat-containing protein 1
+UniProtKB:Q8NBX0,SCCPDH,Saccharopine dehydrogenase-like oxidoreductase
+UniProtKB:P00488,F13A1,Coagulation factor XIII A chain
+UniProtKB:Q8NBM8,PCYOX1L,Prenylcysteine oxidase 1-like
+UniProtKB:Q8NBF2,NHLRC2,NHL repeat-containing protein 2
+UniProtKB:P07225,PROS1,Vitamin K-dependent protein S
+UniProtKB:P00519,ABL1,Tyrosine-protein kinase ABL1
+UniProtKB:Q9Y6T7,DGKB,Diacylglycerol kinase beta
+UniProtKB:Q9Y6Q2,STON1,Stonin-1
+UniProtKB:Q9Y6F6,IRAG1,"Inositol 1,4,5-triphosphate receptor associated 1"
+UniProtKB:O75167,PHACTR2,Phosphatase and actin regulator 2
+UniProtKB:Q9Y6C2,EMILIN1,EMILIN-1
+UniProtKB:O75146,HIP1R,Huntingtin-interacting protein 1-related protein
+UniProtKB:Q9UEU0,VTI1B,Vesicle transport through interaction with t-SNAREs homolog 1B
+UniProtKB:Q6QNY1,BLOC1S2,Biogenesis of lysosome-related organelles complex 1 subunit 2
+UniProtKB:Q6QNY0,BLOC1S3,Biogenesis of lysosome-related organelles complex 1 subunit 3
+UniProtKB:O95477,ABCA1,Phospholipid-transporting ATPase ABCA1
+UniProtKB:Q96C24,SYTL4,Synaptotagmin-like protein 4
+UniProtKB:Q9Y2T2,AP3M1,AP-3 complex subunit mu-1
+UniProtKB:Q9Y6I9,TEX264,Testis-expressed protein 264
+UniProtKB:P30530,AXL,Tyrosine-protein kinase receptor UFO
+UniProtKB:P57729,RAB38,Ras-related protein Rab-38
+UniProtKB:Q96A49,SYAP1,Synapse-associated protein 1
+UniProtKB:P30273,FCER1G,High affinity immunoglobulin epsilon receptor subunit gamma
+UniProtKB:Q93084,ATP2A3,Sarcoplasmic/endoplasmic reticulum calcium ATPase 3
+UniProtKB:Q9H267,VPS33B,Vacuolar protein sorting-associated protein 33B
+UniProtKB:Q9H244,P2RY12,P2Y purinoceptor 12
+UniProtKB:Q16539,MAPK14,Mitogen-activated protein kinase 14
+UniProtKB:P07093,SERPINE2,Glia-derived nexin
+UniProtKB:Q9UHQ9,CYB5R1,NADH-cytochrome b5 reductase 1
+UniProtKB:Q86YW5,TREML1,Trem-like transcript 1 protein
+UniProtKB:P02675,FGB,Fibrinogen beta chain
+UniProtKB:P02649,APOE,Apolipoprotein E
+UniProtKB:O60674,JAK2,Tyrosine-protein kinase JAK2
+UniProtKB:Q08380,LGALS3BP,Galectin-3-binding protein
+UniProtKB:P12814,ACTN1,Alpha-actinin-1
+RNAcentral:URS0000170CF4_9606,hsa-miR-221-3p,Homo sapiens (human) hsa-miR-221-3p
+UniProtKB:Q9BR76,CORO1B,Coronin-1B
+UniProtKB:O60353,FZD6,Frizzled-6
+UniProtKB:P49961,ENTPD1,Ectonucleoside triphosphate diphosphohydrolase 1
+UniProtKB:P29474,NOS3,Nitric oxide synthase 3
+UniProtKB:P49908,SELENOP,Selenoprotein P
+UniProtKB:Q6ZNJ1,NBEAL2,Neurobeachin-like protein 2
+UniProtKB:O60245,PCDH7,Protocadherin-7
+UniProtKB:P02462,COL4A1,Collagen alpha-1(IV) chain
+UniProtKB:P02461,COL3A1,Collagen alpha-1(III) chain
+UniProtKB:P02458,COL2A1,Collagen alpha-1(II) chain
+UniProtKB:P02452,COL1A1,Collagen alpha-1(I) chain
+UniProtKB:Q5SQ64,LY6G6F,Lymphocyte antigen 6 complex locus protein G6f
+UniProtKB:P02776,PF4,Platelet factor 4
+UniProtKB:P02765,AHSG,Alpha-2-HS-glycoprotein
+UniProtKB:P02763,ORM1,Alpha-1-acid glycoprotein 1
+UniProtKB:P09486,SPARC,SPARC
+UniProtKB:P29965,CD40LG,CD40 ligand
+UniProtKB:P02749,APOH,Beta-2-glycoprotein 1
+UniProtKB:O60733,PLA2G6,85/88 kDa calcium-independent phospholipase A2
+UniProtKB:Q08495,DMTN,Dematin
+UniProtKB:P12931,SRC,Proto-oncogene tyrosine-protein kinase Src
+UniProtKB:P56202,CTSW,Cathepsin W
+UniProtKB:P19652,ORM2,Alpha-1-acid glycoprotein 2
+ComplexPortal:CPX-436,emilin2_human,EMILIN-2 complex
+UniProtKB:Q8TE60,ADAMTS18,A disintegrin and metalloproteinase with thrombospondin motifs 18
+UniProtKB:Q15198,PDGFRL,Platelet-derived growth factor receptor-like protein
+UniProtKB:Q15102,PAFAH1B3,Platelet-activating factor acetylhydrolase IB subunit alpha1
+UniProtKB:O94898,LRIG2,Leucine-rich repeats and immunoglobulin-like domains protein 2
+UniProtKB:O94880,PHF14,PHD finger protein 14
+UniProtKB:Q8IZQ8,MYOCD,Myocardin
+UniProtKB:Q6ZUX7,LHFPL2,LHFPL tetraspan subfamily member 2 protein
+UniProtKB:Q9BX10,GTPBP2,GTP-binding protein 2
+UniProtKB:Q9GZP0,PDGFD,Platelet-derived growth factor D
+RNAcentral:URS00003DF3AE_9606,hsa-miR-1298-5p,Homo sapiens (human) hsa-miR-1298-5p
+UniProtKB:O75122,CLASP2,CLIP-associating protein 2
+UniProtKB:Q9Y653,ADGRG1,Adhesion G-protein coupled receptor G1
+UniProtKB:Q9Y624,F11R,Junctional adhesion molecule A
+ComplexPortal:CPX-2881,pdgfaa-alpha_human,PDGF receptor alpha - PDGF-AA complex
+UniProtKB:P43405,SYK,Tyrosine-protein kinase SYK
+UniProtKB:P16885,PLCG2,"1-phosphatidylinositol 4,5-bisphosphate phosphodiesterase gamma-2"
+UniProtKB:Q05655,PRKCD,Protein kinase C delta type
+UniProtKB:P43119,PTGIR,Prostacyclin receptor
+UniProtKB:Q15848,ADIPOQ,Adiponectin
+UniProtKB:Q9Y490,TLN1,Talin-1
+UniProtKB:P22681,CBL,E3 ubiquitin-protein ligase CBL
+UniProtKB:P29350,PTPN6,Tyrosine-protein phosphatase non-receptor type 6
+ComplexPortal:CPX-5052,ap3a_s3b_human,"Ubiquitous AP-3 Adaptor complex, sigma3b variant"
+ComplexPortal:CPX-5051,ap3a_s3a_human,"Ubiquitous AP-3 Adaptor complex, sigma3a variant"
+ComplexPortal:CPX-5049,ap1a_s1c_human,"Ubiquitous AP-1 Adaptor complex, sigma1c variant"
+ComplexPortal:CPX-5048,ap1a_s1b_human,"Ubiquitous AP-1 Adaptor complex, sigma1b variant"
+ComplexPortal:CPX-5047,ap1a_s1a_human,"Ubiquitous AP-1 Adaptor complex, sigma1a variant"
+ComplexPortal:CPX-5044,bloc2_human,BLOC-2 complex
+ComplexPortal:CPX-5043,bloc3_human,BLOC-3 complex
+UniProtKB:P49767,VEGFC,Vascular endothelial growth factor C
+UniProtKB:P49765,VEGFB,Vascular endothelial growth factor B
+UniProtKB:P49747,COMP,Cartilage oligomeric matrix protein
+UniProtKB:P12109,COL6A1,Collagen alpha-1(VI) chain
+UniProtKB:P59780,AP3S2,AP-3 complex subunit sigma-2
+UniProtKB:Q5VY43,PEAR1,Platelet endothelial aggregation receptor 1
+UniProtKB:O43747,AP1G1,AP-1 complex subunit gamma-1
+UniProtKB:O43707,ACTN4,Alpha-actinin-4
+UniProtKB:P05231,IL6,Interleukin-6
+UniProtKB:P52824,DGKQ,Diacylglycerol kinase theta
+UniProtKB:P15498,VAV1,Proto-oncogene vav
+UniProtKB:Q99828,CIB1,Calcium and integrin-binding protein 1
+ComplexPortal:CPX-460,glycoprotein-ia_human,Platelet glycoprotein Ia* complex
+ComplexPortal:CPX-445,multimerin1_human,Multimerin-1 complex
+ComplexPortal:CPX-421,emilin1_human,EMILIN-1 complex
+UniProtKB:P40197,GP5,Platelet glycoprotein V
+UniProtKB:P40189,IL6ST,Interleukin-6 receptor subunit beta
+UniProtKB:Q96PC3,AP1S3,AP-1 complex subunit sigma-3
+UniProtKB:O75954,TSPAN9,Tetraspanin-9
+UniProtKB:O75912,DGKI,Diacylglycerol kinase iota
+UniProtKB:P10909,CLU,Clusterin
+UniProtKB:Q9NTK5,OLA1,Obg-like ATPase 1
+UniProtKB:P19105,MYL12A,Myosin regulatory light chain 12A
+UniProtKB:Q96QS1,TSPAN32,Tetraspanin-32
+UniProtKB:P56704,WNT3A,Protein Wnt-3a
+UniProtKB:Q13093,PLA2G7,Platelet-activating factor acetylhydrolase
+UniProtKB:Q13087,PDIA2,Protein disulfide-isomerase A2
+ComplexPortal:CPX-10329,pahib_human-2,"Platelet-activating factor acetylhydrolase IB complex, alpha1-alpha2 variant"
+ComplexPortal:CPX-10328,pahib_human-1,"Platelet-activating factor acetylhydrolase IB complex, alpha2-alpha2 variant"
+ComplexPortal:CPX-10326,pahib_human,"Platelet-activating factor acetylhydrolase IB complex, alpha1-alpha1 variant"
+UniProtKB:Q9H3M7,TXNIP,Thioredoxin-interacting protein
+UniProtKB:Q9ULP0,NDRG4,Protein NDRG4
+UniProtKB:P84996,GNAS,Protein ALEX
+UniProtKB:Q06418,TYRO3,Tyrosine-protein kinase receptor TYRO3
+UniProtKB:Q06413,MEF2C,Myocyte-specific enhancer factor 2C
+UniProtKB:O75635,SERPINB7,Serpin B7
+UniProtKB:Q9NQG7,HPS4,BLOC-3 complex member HPS4
+UniProtKB:Q9UNF1,MAGED2,Melanoma-associated antigen D2
+UniProtKB:Q9UJM3,ERRFI1,ERBB receptor feedback inhibitor 1
+UniProtKB:P10720,PF4V1,Platelet factor 4 variant
+UniProtKB:P0DJI8,SAA1,Serum amyloid A-1 protein
+UniProtKB:O75460,ERN1,Serine/threonine-protein kinase/endoribonuclease IRE1
+UniProtKB:P00451,F8,Coagulation factor VIII
+UniProtKB:P20908,COL5A1,Collagen alpha-1(V) chain
+UniProtKB:Q9UPZ3,HPS5,BLOC-2 complex member HPS5
+UniProtKB:Q9UPY5,SLC7A11,Cystine/glutamate transporter
+UniProtKB:Q9NUP1,BLOC1S4,Biogenesis of lysosome-related organelles complex 1 subunit 4
+UniProtKB:P07996,THBS1,Thrombospondin-1
+UniProtKB:P07948,LYN,Tyrosine-protein kinase Lyn
+UniProtKB:P07947,YES1,Tyrosine-protein kinase Yes
+RNAcentral:URS00001C3AC1_9606,hsa-miR-296-5p,Homo sapiens (human) hsa-miR-296-5p
+UniProtKB:Q9UQQ2,SH2B3,SH2B adapter protein 3
+UniProtKB:Q9UP65,PLA2G4C,Cytosolic phospholipase A2 gamma
+UniProtKB:Q9NRA1,PDGFC,Platelet-derived growth factor C
+UniProtKB:P07359,GP1BA,Platelet glycoprotein Ib alpha chain
+UniProtKB:Q9UKW4,VAV3,Guanine nucleotide exchange factor VAV3
+UniProtKB:Q16610,ECM1,Extracellular matrix protein 1
+UniProtKB:P17542,TAL1,T-cell acute lymphocytic leukemia protein 1
+UniProtKB:P37840,SNCA,Alpha-synuclein
+UniProtKB:P10600,TGFB3,Transforming growth factor beta-3 proprotein
+UniProtKB:Q06124,PTPN11,Tyrosine-protein phosphatase non-receptor type 11
+UniProtKB:P84022,SMAD3,Mothers against decapentaplegic homolog 3
+UniProtKB:Q9H4M9,EHD1,EH domain-containing protein 1
+UniProtKB:Q9UN36,NDRG2,Protein NDRG2
+UniProtKB:P61764,STXBP1,Syntaxin-binding protein 1
+UniProtKB:P17752,TPH1,Tryptophan 5-hydroxylase 1
+UniProtKB:Q9H4B7,TUBB1,Tubulin beta-1 chain
+UniProtKB:Q5JWF2,GNAS,Guanine nucleotide-binding protein G(s) subunit alpha isoforms XLas
+UniProtKB:Q14644,RASA3,Ras GTPase-activating protein 3
+UniProtKB:Q14643,ITPR1,"Inositol 1,4,5-trisphosphate-gated calcium channel ITPR1"
+UniProtKB:Q14624,ITIH4,Inter-alpha-trypsin inhibitor heavy chain H4
+UniProtKB:P62328,TMSB4X,Thymosin beta-4
+UniProtKB:Q14573,ITPR3,"Inositol 1,4,5-trisphosphate-gated calcium channel ITPR3"
+UniProtKB:Q14571,ITPR2,"Inositol 1,4,5-trisphosphate-gated calcium channel ITPR2"
+UniProtKB:P05155,SERPING1,Plasma protease C1 inhibitor
+UniProtKB:P05154,SERPINA5,Plasma serine protease inhibitor
+UniProtKB:P05121,SERPINE1,Plasminogen activator inhibitor 1
+UniProtKB:P05106,ITGB3,Integrin beta-3
+UniProtKB:Q14393,GAS6,Growth arrest-specific protein 6
+UniProtKB:P05090,APOD,Apolipoprotein D
+UniProtKB:Q14344,GNA13,Guanine nucleotide-binding protein subunit alpha-13
+UniProtKB:P05019,IGF1,Insulin-like growth factor 1
+UniProtKB:Q96EV8,DTNBP1,Dysbindin
+UniProtKB:O43566,RGS14,Regulator of G-protein signaling 14
+UniProtKB:P42574,CASP3,Caspase-3
+UniProtKB:O95470,SGPL1,Sphingosine-1-phosphate lyase 1
+UniProtKB:P04085,PDGFA,Platelet-derived growth factor subunit A
+RNAcentral:URS000075DB2F_9606,hsa-miR-638,Homo sapiens (human) hsa-miR-638
+UniProtKB:P42338,PIK3CB,"Phosphatidylinositol 4,5-bisphosphate 3-kinase catalytic subunit beta isoform"
+UniProtKB:P42336,PIK3CA,"Phosphatidylinositol 4,5-bisphosphate 3-kinase catalytic subunit alpha isoform"
+UniProtKB:P52429,DGKE,Diacylglycerol kinase epsilon
+UniProtKB:Q14865,ARID5B,AT-rich interactive domain-containing protein 5B
+ComplexPortal:CPX-1876,pdgf-bb_human,Platelet-derived growth factor BB complex
+ComplexPortal:CPX-1875,pdgf-ab_human,Platelet-derived growth factor AB complex
+ComplexPortal:CPX-1874,pdgf-aa_human,Platelet-derived growth factor AA complex
+UniProtKB:Q4LDE5,SVEP1,"Sushi, von Willebrand factor type A, EGF and pentraxin domain-containing protein 1"
+UniProtKB:P35579,MYH9,Myosin-9
+UniProtKB:P15976,GATA1,Erythroid transcription factor
+UniProtKB:Q04759,PRKCQ,Protein kinase C theta type
+ComplexPortal:CPX-1977,vegfa_human-1,Vascular endothelial growth factor A complex
+UniProtKB:P05067,APP,Amyloid-beta precursor protein
+UniProtKB:P68402,PAFAH1B2,Platelet-activating factor acetylhydrolase IB subunit alpha2
+UniProtKB:P0C7P3,SLFN14,Protein SLFN14
+UniProtKB:P12259,F5,Coagulation factor V
+UniProtKB:P49619,DGKG,Diacylglycerol kinase gamma
+UniProtKB:P42680,TEC,Tyrosine-protein kinase Tec
+UniProtKB:P35354,PTGS2,Prostaglandin G/H synthase 2
+UniProtKB:P08962,CD63,CD63 antigen
+UniProtKB:P08913,ADRA2A,Alpha-2A adrenergic receptor
+UniProtKB:Q07954,LRP1,Prolow-density lipoprotein receptor-related protein 1
+UniProtKB:P08887,IL6R,Interleukin-6 receptor subunit alpha
+UniProtKB:P29622,SERPINA4,Kallistatin
+UniProtKB:Q9P126,CLEC1B,C-type lectin domain family 1 member B
+UniProtKB:P55211,CASP9,Caspase-9
+UniProtKB:P08709,F7,Coagulation factor VII
+UniProtKB:P08697,SERPINF2,Alpha-2-antiplasmin
+UniProtKB:P08648,ITGA5,Integrin alpha-5
+UniProtKB:P56192,MARS1,"Methionine--tRNA ligase, cytoplasmic"
+UniProtKB:P02671,FGA,Fibrinogen alpha chain
+UniProtKB:P02679,FGG,Fibrinogen gamma chain
+UniProtKB:P18825,ADRA2C,Alpha-2C adrenergic receptor
+UniProtKB:Q10567,AP1B1,AP-1 complex subunit beta-1
+UniProtKB:P08218,CELA2B,Chymotrypsin-like elastase family member 2B
+UniProtKB:P08217,CELA2A,Chymotrypsin-like elastase family member 2A
+UniProtKB:P55001,MFAP2,Microfibrillar-associated protein 2
+UniProtKB:P21926,CD9,CD9 antigen
+UniProtKB:P01137,TGFB1,Transforming growth factor beta-1 proprotein
+UniProtKB:P01133,EGF,Pro-epidermal growth factor
+UniProtKB:P01127,PDGFB,Platelet-derived growth factor subunit B
+UniProtKB:P28300,LOX,Protein-lysine 6-oxidase
+UniProtKB:P18089,ADRA2B,Alpha-2B adrenergic receptor
+UniProtKB:P18054,ALOX12,Polyunsaturated fatty acid lipoxygenase ALOX12
+UniProtKB:P18031,PTPN1,Tyrosine-protein phosphatase non-receptor type 1
+UniProtKB:O76080,ZFAND5,AN1-type zinc finger protein 5
+UniProtKB:Q5KSL6,DGKK,Diacylglycerol kinase kappa
+UniProtKB:Q9BXJ1,C1QTNF1,Complement C1q tumor necrosis factor-related protein 1
+UniProtKB:Q7Z3E1,TIPARP,Protein mono-ADP-ribosyltransferase TIPARP
+UniProtKB:P01344,IGF2,Insulin-like growth factor 2
+UniProtKB:P09619,PDGFRB,Platelet-derived growth factor receptor beta
+UniProtKB:P11831,SRF,Serum response factor
+UniProtKB:P01584,IL1B,Interleukin-1 beta
+UniProtKB:P08567,PLEK,Pleckstrin
+UniProtKB:P08514,ITGA2B,Integrin alpha-IIb
+UniProtKB:P02751,FN1,Fibronectin
+UniProtKB:P02768,ALB,Albumin
+UniProtKB:P02775,PPBP,Platelet basic protein
+UniProtKB:A6NFX1,MFSD2B,Sphingosine-1-phosphate transporter MFSD2B
+UniProtKB:P25942,CD40,Tumor necrosis factor receptor superfamily member 5
+UniProtKB:P05452,CLEC3B,Tetranectin
+UniProtKB:P15692,VEGFA,"Vascular endothelial growth factor A, long form"
+UniProtKB:Q7L3B6,CDC37L1,Hsp90 co-chaperone Cdc37-like 1
+UniProtKB:P21291,CSRP1,Cysteine and glycine-rich protein 1
+UniProtKB:P68871,HBB,Hemoglobin subunit beta
+UniProtKB:Q92902,HPS1,BLOC-3 complex member HPS1
+UniProtKB:P51575,P2RX1,P2X purinoceptor 1
+UniProtKB:Q86XP1,DGKH,Diacylglycerol kinase eta
+UniProtKB:Q9HCN6,GP6,Platelet glycoprotein VI
+UniProtKB:P01042,KNG1,Kininogen-1
+UniProtKB:P48736,PIK3CG,"Phosphatidylinositol 4,5-bisphosphate 3-kinase catalytic subunit gamma isoform"
+UniProtKB:P01033,TIMP1,Metalloproteinase inhibitor 1
+UniProtKB:P01023,A2M,Alpha-2-macroglobulin
+UniProtKB:P01011,SERPINA3,Alpha-1-antichymotrypsin
+UniProtKB:P28223,HTR2A,5-hydroxytryptamine receptor 2A
+UniProtKB:P01009,SERPINA1,Alpha-1-antitrypsin
+UniProtKB:Q7L5N7,LPCAT2,Lysophosphatidylcholine acyltransferase 2
+RNAcentral:URS000075A2F8_9606,hsa-miR-4632-3p,Homo sapiens (human) hsa-miR-4632-3p
+UniProtKB:P16591,FER,Tyrosine-protein kinase Fer
+UniProtKB:P61966,AP1S1,AP-1 complex subunit sigma-1A
+UniProtKB:P56377,AP1S2,AP-1 complex subunit sigma-2
+UniProtKB:P31645,SLC6A4,Sodium-dependent serotonin transporter
+UniProtKB:P16284,PECAM1,Platelet endothelial cell adhesion molecule
+UniProtKB:Q99487,PAFAH2,"Platelet-activating factor acetylhydrolase 2, cytoplasmic"
+UniProtKB:Q86YV9,HPS6,BLOC-2 complex member HPS6
+UniProtKB:Q86YL7,PDPN,Podoplanin
+UniProtKB:P04792,HSPB1,Heat shock protein beta-1
+UniProtKB:P61812,TGFB2,Transforming growth factor beta-2 proprotein
+UniProtKB:Q6UVK1,CSPG4,Chondroitin sulfate proteoglycan 4
+UniProtKB:P52735,VAV2,Guanine nucleotide exchange factor VAV2
+UniProtKB:O43427,FIBP,Acidic fibroblast growth factor intracellular-binding protein
+UniProtKB:P62937,PPIA,Peptidyl-prolyl cis-trans isomerase A
+UniProtKB:O43915,VEGFD,Vascular endothelial growth factor D
+UniProtKB:P35638,DDIT3,DNA damage-inducible transcript 3 protein
+UniProtKB:P35625,TIMP3,Metalloproteinase inhibitor 3
+UniProtKB:P35609,ACTN2,Alpha-actinin-2
+UniProtKB:P35442,THBS2,Thrombospondin-2
+UniProtKB:P25116,F2R,Proteinase-activated receptor 1
+UniProtKB:P25105,PTAFR,Platelet-activating factor receptor
+UniProtKB:Q13574,DGKZ,Diacylglycerol kinase zeta
+UniProtKB:O15496,PLA2G10,Group 10 secretory phospholipase A2
+UniProtKB:P04275,VWF,von Willebrand factor
+UniProtKB:Q13547,HDAC1,Histone deacetylase 1
+UniProtKB:O15439,ABCC4,ATP-binding cassette sub-family C member 4
+UniProtKB:P04217,A1BG,Alpha-1B-glycoprotein
+UniProtKB:P14210,HGF,Hepatocyte growth factor
+UniProtKB:O15162,PLSCR1,Phospholipid scramblase 1
+UniProtKB:Q9NY59,SMPD3,Sphingomyelin phosphodiesterase 3
+UniProtKB:P78537,BLOC1S1,Biogenesis of lysosome-related organelles complex 1 subunit 1
+UniProtKB:P14778,IL1R1,Interleukin-1 receptor type 1
+UniProtKB:P78527,PRKDC,DNA-dependent protein kinase catalytic subunit
+UniProtKB:Q9HB21,PLEKHA1,Pleckstrin homology domain-containing family A member 1
+UniProtKB:P24844,MYL9,Myosin regulatory light polypeptide 9
+UniProtKB:P61225,RAP2B,Ras-related protein Rap-2b
+UniProtKB:P04196,HRG,Histidine-rich glycoprotein
+UniProtKB:P04180,LCAT,Phosphatidylcholine-sterol acyltransferase
+UniProtKB:Q13418,ILK,Scaffold protein ILK
+UniProtKB:Q13201,MMRN1,Multimerin-1
+UniProtKB:Q9NXH8,TOR4A,Torsin-4A
+UniProtKB:Q96S65,CSRNP1,Cysteine/serine-rich nuclear protein 1
+UniProtKB:Q13191,CBLB,E3 ubiquitin-protein ligase CBL-B
+UniProtKB:P04075,ALDOA,Fructose-bisphosphate aldolase A
+UniProtKB:Q96RI0,F2RL3,Proteinase-activated receptor 4
+UniProtKB:Q13103,SPP2,Secreted phosphoprotein 24
+UniProtKB:Q76LX8,ADAMTS13,A disintegrin and metalloproteinase with thrombospondin motifs 13
+UniProtKB:P51809,VAMP7,Vesicle-associated membrane protein 7
+UniProtKB:Q9NUQ9,CYRIB,CYFIP-related Rac1 interactor B
+UniProtKB:Q6UXV4,APOOL,MICOS complex subunit MIC27
+UniProtKB:P07204,THBD,Thrombomodulin
+UniProtKB:Q4KMQ2,ANO6,Anoctamin-6
+,,
+manually searched ones (not from platelet amigo search),,
+UniProtKB:P14151,SELL,L-selectin
+UniProtKB:Q14242,SELPLG,P-selectin glycoprotein ligand 1
+UniProtKB:O60603,TLR2,Toll-like receptor 2
+UniProtKB:P05107,ITGB2,Integrin beta-2
+UniProtKB:P11215,ITGAM,Integrin alpha-M
+UniProtKB:P05106,ITGB3,Integrin beta-3
+UniProtKB:P25942,CD40,Tumor necrosis factor receptor superfamily member 5
+UniProtKB:P29965,CD40LG,CD40 ligand
+UniProtKB:P02776,PF4,Platelet factor 4
+UniProtKB:P05556,ITGB1,Integrin beta-1
