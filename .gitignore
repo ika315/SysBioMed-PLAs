@@ -1,1 +1,9 @@
 
+*.gz
+*.Rproj.user
+*.RData
+*.Rhistory
+*.Rproj.user/
+
+.ipynb_checkpoints/
+.idea/
