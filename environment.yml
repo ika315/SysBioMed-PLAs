@@ -2,43 +2,16 @@ name: pla-enrichment
 channels:
   - conda-forge
   - bioconda
-  - defaults
-
 dependencies:
-  # Python
-  - python=3.11
-  - pip
-  - scanpy
-  - anndata
-  - python-igraph
-  - leidenalg
-  - matplotlib
-  - numpy
-  - pandas
-  - scikit-learn
-  - h5py
-  - tqdm
+  - r-base=4.3.3
+  - r-essentials
+  - r-seurat=5.0.3
+  - r-tidyverse
+  - r-soupx
+  - r-clustree
+  - bioconductor-scdblfinder
+  - bioconductor-singlecellexperiment
+  - bioconductor-scater
+  - bioconductor-scran
+  - bioconductor-scuttle
 
-  # R base + system libs needed by Seurat/SoupX
-  - r-base>=4.3
-  - r-curl
-  - r-data.table
-  - r-png
-  - r-xml2
-  - r-httpuv
-  - r-igraph
-  - r-devtools
-  - r-assertthat
-
-  # rpy2 integration
-  - rpy2
-
-  # Compression utils
-  - zlib
-  - libcurl
-  - openssl
-  - gcc                # Compiler für R-Packages
-
-  # Optional: Jupyter Support
-  - ipykernel
-  - jupyterlab

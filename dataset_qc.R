@@ -1,23 +1,36 @@
 library(Seurat)
-library(DoubletFinder)
+library(scDblFinder)
+library(SingleCellExperiment)
+library(SoupX)
+library(Matrix)
+library(clustree)
 # read data
-data_path <- "data/GSM5008737_RNA_3P/"
+data_path <- "/nfs/home/students/f.mathis/SysBioMed-PLAs/data/GSM5008737_RNA_3P/"
 counts <- Read10X(data.dir = data_path)
+counts <- as(counts, "dgCMatrix")
 
 seu <- CreateSeuratObject(
-  counts = counts,
+  counts = counts,  
   project = "PlateletEnrichment",
   min.cells = 3,
   min.features = 50 
 )
 
+tod <- counts
+flt <- seu@assays$RNA@counts
+
 rm(counts)
+gc()
 
 # statistics
-seu[["percent.mt"]] <- PercentageFeatureSet(seu, pattern = "^MT-")lot(
+seu[["percent.mt"]] <- PercentageFeatureSet(seu, pattern = "^MT-")
+seu[["percent.ribo"]] <- PercentageFeatureSet(seu, pattern = "^RP[SL]")
+seu[["percent.hb"]] <- PercentageFeatureSet(seu, pattern = "^HB(?!P)", regex = TRUE)
+
+VlnPlot(
   seu,
-  features = c("nFeature_RNA", "nCount_RNA", "percent.mt", "percent.ribo", "percent.hb"),
-  ncol = 5,
+  features = c("nFeature_RNA", "nCount_RNA", "percent.mt"),
+  ncol = 3,
   pt.size = 0
 )
 
@@ -25,11 +38,15 @@ FeatureScatter(seu, feature1 = "nCount_RNA", feature2 = "percent.mt")
 FeatureScatter(seu, feature1 = "nCount_RNA", feature2 = "percent.hb")
 FeatureScatter(seu, feature1 = "nCount_RNA", feature2 = "percent.ribo")
 
+# qc start
 seu <- subset(
   seu,
-  subset =  nFeature_RNA > 100 &
-    percent.mt < 20   
+  subset = percent.mt < 20 &
+           percent.ribo < 40 &
+           percent.hb < 5
 )
+
+dims.use <- 1:20
 
 seu <- NormalizeData(seu)
 
@@ -39,36 +56,69 @@ seu <- ScaleData(seu)
 
 seu <- RunPCA(seu)
 
-dims.use <- 1:20
-
 seu <- FindNeighbors(seu, dims = dims.use)
+
 seu <- FindClusters(seu, resolution = 0.5)
-seu <- RunUMAP(seu, dims = dims.use)
 
-DimPlot(seu, group.by = "seurat_clusters", label = TRUE)
+soupx_groups <- seu$seurat_clusters
 
-# doublet detection
-sweep.res.list <- paramSweep(seu, PCs = dims.use, sct = FALSE)
-sweep.stats <- summarizeSweep(sweep.res.list, GT = FALSE)
-bcmvn <- find.pK(sweep.stats)
-pK_optimal <- bcmvn$pK[which.max(bcmvn$BCmetric)]
+sc <- SoupChannel(tod, flt, calcSoupProfile = TRUE)
 
-doublet.rate <- 0.075
-nExp_poi <- round(doublet.rate * ncol(seu))
+sc <- setClusters(sc, soupx_groups)
+sc <- autoEstCont(sc, doPlot = TRUE)
 
-df_seu <- seu
+corrected <- adjustCounts(sc, roundToInt = TRUE)
 
-# Remove unnecessary assays, scale.data and dimreductions
-df_seu <- DietSeurat(
-  df_seu,
-  counts    = TRUE,
-  data      = TRUE,      
-  scale.data = FALSE,
-  assays    = "RNA",    
-  dimreducs = "pca"     
+seu_sx <- CreateSeuratObject(counts = corrected)
+
+keep <- Matrix::rowSums(seu_sx@assays$RNA@counts > 0) >= 20
+seu_sx <- seu_sx[keep, ]
+
+rm(tod, flt, seu, soupx_groups, keep) 
+gc()
+
+seu_sx[["percent.mt"]] <- PercentageFeatureSet(seu_sx, pattern = "^MT-")
+seu_sx[["percent.ribo"]] <- PercentageFeatureSet(seu_sx, pattern = "^RP[SL]")
+seu_sx[["percent.hb"]] <- PercentageFeatureSet(seu_sx, pattern = "^HB(?!P)", regex = TRUE)
+
+seu_sx <- subset(
+  seu_sx,
+  subset = percent.mt < 20 &
+           percent.ribo < 40 &
+           percent.hb < 5
 )
 
+seu_sx <- NormalizeData(seu_sx)
 
-DimPlot(seu, group.by = grep("DF.classifications", colnames(seu@meta.data), value = TRUE), 
-        reduction = "umap")
+seu_sx <- FindVariableFeatures(seu_sx, selection.method = "vst", nfeatures = 2000)
 
+seu_sx <- ScaleData(seu_sx)
+
+seu_sx <- RunPCA(seu_sx)
+
+seu_sx <- FindNeighbors(seu_sx, dims = dims.use)
+
+seu_sx <- FindClusters(seu_sx, resolution = 1.0)
+
+seu_sx <- RunUMAP(seu_sx, dims = dims.use)
+
+DimPlot(seu_sx, group.by = "seurat_clusters", label = TRUE)
+
+# doublet detection
+sce <- as.SingleCellExperiment(seu)
+sce <- scDblFinder(sce)
+
+seu$scDblFinder_class <- sce$scDblFinder.class
+seu$scDblFinder_score <- sce$scDblFinder.score
+
+table(seu$scDblFinder_class)
+
+print(
+  DimPlot(seu, group.by = "scDblFinder_class", reduction = "umap")
+)
+
+VlnPlot(seu, "scDblFinder_score", group.by = "scDblFinder_class", pt.size = 0.1)
+
+FeaturePlot(seu, "scDblFinder_score", reduction = "umap")
+
+pbmc_singlets <- subset(pbmc_seu, subset = scDblFinder_class == "singlet")
