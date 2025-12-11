@@ -1,0 +1,288 @@
+---
+title: "Vergleich von Gen-Signatur-Scoring-Methoden für PLA-Detektion"
+author: "Aurelia Dersch"
+date: "`r format(Sys.Date(), '%d.%m.%Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 7)
+```
+
+```{r, echo=TRUE}
+
+library(Seurat)
+library(SeuratData)
+library(AUCell)
+library(UCell)
+library(ggplot2)
+library(patchwork) 
+library(dplyr) 
+library(tibble)
+
+# Signatur Definition 
+# Später Platelet-Signatur hier einfügen
+T.cell.signatures <- list(
+  T_Aktiv_Sig = c("CD3E", "CD8A", "IFNG", "IL2RA") 
+)
+
+```
+
+## 1. Datenverarbeitung und Preprocessing
+
+Wir verwenden den Seurat-Beispieldatensatz pbmc3k.final. Später wird er durch das finale PLA-Dataset ersetzt. Die Preprocessing-Schritte stellen sicher, dass die Daten für das Clustering und die Scoring-Methoden vorbereitet sind.
+
+```{r, echo=TRUE}
+data("pbmc3k.final")
+pbmc <- pbmc3k.final 
+
+DefaultAssay(pbmc) <- "RNA"
+pbmc <- DietSeurat(pbmc, assays = "RNA", misc = FALSE, images = FALSE) 
+
+pbmc <- NormalizeData(pbmc)
+pbmc <- FindVariableFeatures(pbmc)
+pbmc <- ScaleData(pbmc) 
+pbmc <- RunPCA(pbmc, features = VariableFeatures(object = pbmc))
+pbmc <- RunUMAP(pbmc, dims = 1:10)
+pbmc <- FindNeighbors(pbmc, dims = 1:10)
+pbmc <- FindClusters(pbmc, resolution = 0.8)
+
+print(pbmc)
+```
+
+## 2. Methode: AddModuleScore (Seurat)
+
+### 2.1 Funktionsweise und Parameter
+
+Diese Methode berechnet den Score als durchschnittliche Expression der Signatur-Gene minus der durchschnittlichen Expression von Kontroll-Genen. Die Kontroll-Gene werden zufällig ausgewählt, aber auf der Basis der Expression in Bins gematcht. Das soll zelluläre Biases (z.B. Zellgröße) korrigieren.
+
+Wichtigste Parameter:
+
+-   `ctrl` (default: 100): Anzahl der Kontroll-Gene pro Signatur
+-   `nbin` (default: 24): Anzahl der Bins, in die Gene für das Matching eingeteilt werden
+
+### 2.2 Scoring und Visualisierung
+
+```{r, echo=TRUE}
+pbmc <- AddModuleScore(
+  pbmc, 
+  features = T.cell.signatures, 
+  name = "Seurat_Score"
+)
+score_name_seurat <- "Seurat_Score1"
+```
+
+```{r}
+# Visualisierung: UMAP und Verteilung pro Cluster
+p1_seurat <- FeaturePlot(pbmc, features = score_name_seurat, reduction = "umap") + 
+  labs(title = "AddModuleScore (UMAP)")
+
+p2_seurat <- VlnPlot(pbmc, features = score_name_seurat, group.by = "seurat_clusters", pt.size = 0.5, ncol = 1) + 
+  labs(title = "AddModuleScore (per Cluster)")
+
+p1_seurat | p2_seurat
+```
+
+## 3. Methode: UCell
+
+### 3. 1 Funktionsweise und Parameter
+
+UCell ist ein Rang-basierter Score (AUC), der durch eine Uniformity Correction weniger sensitiv gegenüber der Signaturgröße ist.
+
+Wichtigster Parameter:
+
+-   `maxRank` (default \~1500): Der maximale Rang (Anzahl der Gene) in der zellspezifischen Gen-Rangliste, bis zu dem die AUC (Area Under the Curve) berechnet wird. Für ein schwaches PLA-Signal muss dieser Wert ggf. erhöht werden.
+
+### 3. 2 Experiment mit `maxRank` (Default vs. Modifiziert)
+
+Wir berechnen den Score mit dem typischen Standardwert ≈1500 und einem modifizierten Wert ≈5000, um den Effekt zu zeigen.
+
+```{r ucell_scoring, echo=TRUE}
+
+SIGNATURE_NAME <- names(T.cell.signatures)[1] 
+
+MAX_RANK_DEFAULT <- 1500 
+MAX_RANK_MODIFIED <- 5000
+
+# DEFAULT BERECHNUNG
+pbmc <- AddModuleScore_UCell(
+  pbmc, 
+  features = T.cell.signatures, 
+  assay = "RNA",
+  name = "UCellDefault", 
+  maxRank = MAX_RANK_DEFAULT 
+)
+score_name_ucell_default_temp <- paste0(SIGNATURE_NAME, "UCellDefault")
+pbmc$UCell_Default_Score <- pbmc[[score_name_ucell_default_temp, drop=TRUE]]
+score_name_ucell_default <- "UCell_Default_Score"
+
+
+# MODIFIZIERTE BERECHNUNG
+pbmc <- AddModuleScore_UCell(
+  pbmc, 
+  features = T.cell.signatures, 
+  assay = "RNA",
+  name = "UCellModified", 
+  maxRank = MAX_RANK_MODIFIED 
+)
+
+score_name_ucell_modified_temp <- paste0(SIGNATURE_NAME, "UCellModified")
+pbmc$UCell_Modified_Score <- pbmc[[score_name_ucell_modified_temp, drop=TRUE]]
+score_name_ucell_modified <- "UCell_Modified_Score"
+
+```
+
+### 3. Visualisierung
+
+```{r, echo=TRUE}
+p1_ucell <- FeaturePlot(pbmc, features = score_name_ucell_default, reduction = "umap") + 
+  labs(title = paste0("UCell Default (maxRank=", MAX_RANK_DEFAULT, ")"))
+
+p2_ucell <- FeaturePlot(pbmc, features = score_name_ucell_modified, reduction = "umap") + 
+  labs(title = paste0("UCell Modifiziert (maxRank=", MAX_RANK_MODIFIED, ")"))
+
+p1_ucell | p2_ucell
+
+# Per Cluster Verteilung des Modifizierten Scores
+p3_ucell <- VlnPlot(pbmc, features = score_name_ucell_default, group.by = "seurat_clusters", pt.size = 0.5, ncol = 1) + 
+  labs(title = paste0("UCell Default (per Cluster) (maxRank=", MAX_RANK_DEFAULT, ")"))
+
+p4_ucell <- VlnPlot(pbmc, features = score_name_ucell_modified, group.by = "seurat_clusters", pt.size = 0.5, ncol = 1) + 
+  labs(title = paste0("UCell Modifiziert (per Cluster) (maxRank=", MAX_RANK_MODIFIED, ")"))
+
+p3_ucell | p4_ucell
+
+```
+
+## 4. Methode: AUCell
+
+### 4. 1 Funktionsweise und Parameter
+
+AUCell ist ebenfalls ein Rang-basierter Score. Hier wird direkt mit den Ranks der Expression und der AUC gearbeitet.
+
+-   **Wichtigster Parameter:**
+
+    -   `aucMaxRank` (default: 5% der Gene): Der maximale Rang als Prozentsatz der Gesamt-Genanzahl, bis zu dem die AUC berechnet wird. Für ein schwaches PLA-Signal muss dieser Wert ggf. erhöht werden.
+
+### 4. 2 Experiment mit `aucMaxRank` (Default vs. Modifiziert)
+
+Wir berechnen den Score mit dem Standardwert 5% und dem modifizierten Wert 20%.
+
+```{r, echo=TRUE}
+
+AUC_MAX_RANK_PC_DEFAULT <- 0.05 
+AUC_MAX_RANK_PC_MODIFIED <- 0.20
+
+expression_matrix <- GetAssayData(pbmc, slot = "data") 
+cells_rankings <- AUCell_buildRankings(expression_matrix, plotStats=FALSE)
+total_genes <- nrow(expression_matrix)
+
+# DEFAULT BERECHNUNG
+cells_AUC_default <- AUCell_calcAUC(T.cell.signatures, cells_rankings, aucMaxRank = AUC_MAX_RANK_PC_DEFAULT * total_genes)
+pbmc$AUCell_Score_Default <- as.numeric(getAUC(cells_AUC_default)[1, ])
+score_name_aucell_default <- "AUCell_Score_Default"
+
+
+# MODIFIZIERTE BERECHNUNG 
+cells_AUC_modified <- AUCell_calcAUC(T.cell.signatures, cells_rankings, aucMaxRank = AUC_MAX_RANK_PC_MODIFIED * total_genes)
+pbmc$AUCell_Score_Modified <- as.numeric(getAUC(cells_AUC_modified)[1, ])
+score_name_aucell_modified <- "AUCell_Score_Modified"
+```
+
+### Visualisierung
+
+```{r, echo=TRUE}
+p1_aucell <- FeaturePlot(pbmc, features = score_name_aucell_default, reduction = "umap") + 
+  labs(title = paste0("AUCell Default (", AUC_MAX_RANK_PC_DEFAULT*100, "%)"))
+
+p2_aucell <- FeaturePlot(pbmc, features = score_name_aucell_modified, reduction = "umap") + 
+  labs(title = paste0("AUCell Modifiziert (", AUC_MAX_RANK_PC_MODIFIED*100, "%)"))
+
+p1_aucell | p2_aucell 
+
+p3_aucell <- VlnPlot(pbmc, features = score_name_aucell_default, group.by = "seurat_clusters", pt.size = 0.5, ncol = 1) + 
+  labs(title = paste0("AUCell Default (per Cluster, ", AUC_MAX_RANK_PC_DEFAULT*100, "%)"))
+
+p4_aucell <- VlnPlot(pbmc, features = score_name_aucell_modified, group.by = "seurat_clusters", pt.size = 0.5, ncol = 1) + 
+  labs(title = paste0("AUCell Modifiziert (per Cluster, ", AUC_MAX_RANK_PC_MODIFIED*100, "%)"))
+
+p3_aucell | p4_aucell 
+
+```
+
+## 5. Zusammenfassung 
+
++--------------------+----------------------------------------------------+-----------------------------+------------------------------------------------------------------+------------------------------------------------------------------------------------------+
+| Methode            | Kernprinzip                                        | Wichtige Parameter für PLAs | Stärke                                                           | Schwäche                                                                                 |
++====================+====================================================+=============================+==================================================================+==========================================================================================+
+| **AddModuleScore** | Expressions-Differenz zu gematchten Kontroll-Genen | `ctrl`, `nbin`              | Korrigiert Biases (z.B. Zellgröße)                               | Abhängig von der Qualität des Kontroll-Gen-Matchings                                     |
++--------------------+----------------------------------------------------+-----------------------------+------------------------------------------------------------------+------------------------------------------------------------------------------------------+
+| AUCell             | Rang-basierter AUC-Score                           | `aucMaxRank` (Prozentsatz)  | Sehr robust gegenüber Ausreißern und absoluten Expressionswerten | Score ist sensitiv zur Signaturgröße; muss für schwache Signale (`PLA`) angepasst werden |
++--------------------+----------------------------------------------------+-----------------------------+------------------------------------------------------------------+------------------------------------------------------------------------------------------+
+| UCell              | Rang-basierter AUC-Score mit Uniformity Correction | `maxRank`                   | Schnell, weniger sensitiv zur Signaturgröße                      | Muss für schwache Signale (`PLA`) angepasst werden                                       |
+|                    |                                                    |                             |                                                                  |                                                                                          |
+|                    |                                                    | (absolute Zahl)             |                                                                  |                                                                                          |
++--------------------+----------------------------------------------------+-----------------------------+------------------------------------------------------------------+------------------------------------------------------------------------------------------+
+
+## Zelltyp-spezifische Z-Score-Normalisierung
+
+Für die PLA-Detektion wenden wir noch die Normalisierung der Scores innerhalb jedes Immunzelltyps (Cluster) an, um festzustellen, ob die Platelet-Transkripte die erwarteten Hintergrundwerte für diesen spezifischen Zelltyp überschreiten.
+
+Hier wird jetzt der modifizierte AUCell-Score (`AUCell_Score_Modified`) verwendet. 
+
+```{r zscore_normalization, echo=TRUE}
+score_to_normalize <- "AUCell_Score_Modified"
+cluster_col <- "seurat_clusters"
+
+data_for_zscore <- pbmc@meta.data %>%
+  mutate(ClusterID = as.character(!!sym(cluster_col))) %>%
+  select(ClusterID, Score = !!sym(score_to_normalize))
+
+# Berechnung von mean und sd
+cluster_stats <- data_for_zscore %>%
+  group_by(ClusterID) %>%
+  summarise(
+    mean_score = mean(Score),
+    sd_score = sd(Score),
+    .groups = 'drop'
+  )
+
+# Z-Scores berechnen und in das Seurat-Objekt zurückschreiben
+normalized_scores <- data_for_zscore %>%
+  left_join(cluster_stats, by = "ClusterID") %>%
+  mutate(AUCell_ZScore = (Score - mean_score) / sd_score) %>%
+  select(AUCell_ZScore) 
+
+# Z-Score in die Metadaten des Seurat-Objekts einfügen
+pbmc$AUCell_ZScore <- normalized_scores$AUCell_ZScore
+pbmc$AUCell_ZScore[is.na(pbmc$AUCell_ZScore)] <- 0 
+
+score_name_zscore <- "AUCell_ZScore"
+
+print(head(pbmc@meta.data[, c(cluster_col, score_to_normalize, score_name_zscore)]))
+
+```
+
+### Visualisierung des Z-Scores
+
+
+```{r}
+# Der Z-Score ist zentriert um 0.
+p1_zscore <- FeaturePlot(pbmc, features = score_name_zscore, reduction = "umap") + 
+  labs(title = "AUCell Score (Z-Score Normalisiert, UMAP)")
+
+p2_zscore <- VlnPlot(pbmc, features = score_name_zscore, group.by = "seurat_clusters", pt.size = 0.5, ncol = 1) + 
+  geom_hline(yintercept = 2, linetype = "dashed", color = "red") + # Beispiel-Threshold zur Kennzeichnung möglicher PLAs
+  labs(title = "AUCell Score (Z-Score per Cluster, Threshold Z=2)")
+
+p1_zscore | p2_zscore
+```
+
+
+
+
+
