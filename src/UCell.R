@@ -48,7 +48,7 @@ plot_data <- data.frame(Score = pbmc[[score_name, drop = TRUE]])
 
 ggplot(plot_data, aes(x = Score)) + 
   geom_density(fill = "#00BFC4", alpha = 0.7) +
-  labs(title = "Dichteplot des UCell Scores (Gesamtverteilung)") +
+  labs(title = "Density Plot of UCell Score") +
   theme_classic()
 dev.off()
 
