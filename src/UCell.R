@@ -30,16 +30,7 @@ pbmc <- FindClusters(pbmc, resolution = 0.8)
 # )
 
 # platelet version
-T.cell.signatures <- list(
-  T_Aktiv_Sig = c(
-    "ACTB", "ACT", "ACTA", "FIBB", "VASP", "ITA2B", "ITB3", "GPV", "GP1BA", "GP1BB",
-    "GPIX", "GELS", "PECA1", "LYAM3", "KPCB", "GPVI", "ITA2", "ICAM2", "CD63", "TSN9",
-    "PRIO", "FCG2A", "LAMB1", "CD92", "CD41", "CD61", "CD62P", "CD9", "CD23", "CD31",
-    "CD36", "CD42a", "CD42b", "CD42c", "CD42d", "CD49b", "CD49f", "CD51", "CD84", "CD109",
-    "CD110", "CD147", "CD151", "CD226", "CD107a", "CD107b", "ITGA2B", "ITGB3", "GP9", "GP5",
-    "SELP", "VWF", "PF4", "PPBP", "RAB27B", "VAMP8", "SNAP23", "CLIC3", "THBS1", "FERMT3",
-    "TREML1", "TUBB1", "ANXA3", "ANXA5", "GNAS", "SPARC", "F13A1"
-  ))
+sig_other <- make_signature(genes, "Platelet_Signature", "other")
 
 print(pbmc)
 
@@ -47,10 +38,10 @@ print(pbmc)
 print("--- Berechne UCell Score ---")
 pbmc <- AddModuleScore_UCell(
   pbmc, 
-  features = T.cell.signatures, 
+  features = sig_other, 
   assay = "RNA"
 )
-score_name <- "T_Aktiv_Sig_UCell"
+score_name <- "Platelet_Signature_UCell"
 
 # Visualization
 print("--- Visualisierung ---")
