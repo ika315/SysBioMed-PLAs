@@ -24,9 +24,21 @@ pbmc <- FindNeighbors(pbmc, dims = 1:10)
 pbmc <- FindClusters(pbmc, resolution = 0.8)
 
 # Signatur Definition (anpassen)
+# T.cell.signatures <- list(
+  # T_Aktiv_Sig = c("CD3E", "CD8A", "IFNG", "IL2RA") 
+# )
+
+# platelet version
 T.cell.signatures <- list(
-  T_Aktiv_Sig = c("CD3E", "CD8A", "IFNG", "IL2RA") 
-)
+  T_Aktiv_Sig = c(
+  "ACTB", "ACT", "ACTA", "FIBB", "VASP", "ITA2B", "ITB3", "GPV", "GP1BA", "GP1BB",
+  "GPIX", "GELS", "PECA1", "LYAM3", "KPCB", "GPVI", "ITA2", "ICAM2", "CD63", "TSN9",
+  "PRIO", "FCG2A", "LAMB1", "CD92", "CD41", "CD61", "CD62P", "CD9", "CD23", "CD31",
+  "CD36", "CD42a", "CD42b", "CD42c", "CD42d", "CD49b", "CD49f", "CD51", "CD84", "CD109",
+  "CD110", "CD147", "CD151", "CD226", "CD107a", "CD107b", "ITGA2B", "ITGB3", "GP9", "GP5",
+  "SELP", "VWF", "PF4", "PPBP", "RAB27B", "VAMP8", "SNAP23", "CLIC3", "THBS1", "FERMT3",
+  "TREML1", "TUBB1", "ANXA3", "ANXA5", "GNAS", "SPARC", "F13A1"
+))
 
 print(pbmc)
 
@@ -45,11 +57,11 @@ print("--- Visualisierung ---")
 
 # a) UMAP des Scores
 pbmc <- RunUMAP(pbmc, dims = 1:10)
-png(filename = "03_AUCell_UMAP.png", width = 800, height = 700) 
+png(filename = "plots/03_AUCell_UMAP.png", width = 800, height = 700) 
 FeaturePlot(pbmc, features = score_name, reduction = "umap")
 dev.off()
 
 # b) Per-Cluster Verteilung
-png(filename = "03_AUCell_VlnPlot.png", width = 800, height = 600) 
+png(filename = "plots/03_AUCell_VlnPlot.png", width = 800, height = 600) 
 VlnPlot(pbmc, features = score_name, group.by = "seurat_clusters", pt.size = 0.5, ncol = 1)
 dev.off()
