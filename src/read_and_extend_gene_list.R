@@ -3,6 +3,7 @@
 library(readr)
 library(dplyr)
 
+# METHOD THAT READS IN CREATED CSV FILE OF KNOWN PLATELET SIGNATURE GENES
 read_gene_list <- function(gene_csv) {
   
   use_cols <- c("geneName")
@@ -22,10 +23,13 @@ read_gene_list <- function(gene_csv) {
   return(genes)
 }
 
-extend_gene_set <- function(gene_set) {
-  # to be implemented
+# METHOD THAT EXTENDS EXISTING GENE SET WITH ENRICHED GENES FROM ENRICHMENT METHODS
+extend_gene_set <- function(genes=genes, gene_set) {
+  extended_gene_set <- union(genes, gene_set)
+  return(extended_gene_set)
 }
 
+# METHOD THAT CREATES SIGNATURE OBJECT FOR THE ENRICHMENT METHODS OUT OF THE KNOWN GENES
 make_signature <- function(genes, sig_name = "Signature", method = "other") {
   # defalt methods (addmodulescore etc)
   
@@ -50,6 +54,7 @@ make_signature <- function(genes, sig_name = "Signature", method = "other") {
   }
 }
 
+# RUNNING THE METHODS
 # read in genes
 base_dir <- getwd()
 gene_csv <- file.path(base_dir, "data", "updated_gene_list.csv")
@@ -60,3 +65,4 @@ print(genes)
 # create sig lists for enrichment methods
 sig_other <- make_signature(genes, "Platelet_Signature", "other")
 sig_vision <- make_signature(genes = genes, sig_name = "Platelet_Signature", method = "vision")
+

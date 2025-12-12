@@ -41,6 +41,37 @@ pbmc <- AddModuleScore(
 )
 score_name <- "Seurat_Score1" 
 
+# extracting high ranked genes for extend gene set method
+high_cells_Seurat <- names(pbmc[[score_name, drop = TRUE]])[
+  pbmc[[score_name, drop = TRUE]] >
+    quantile(pbmc[[score_name, drop = TRUE]], 0.9)
+]
+
+pbmc$SeuratScore_group <- ifelse(
+  colnames(pbmc) %in% high_cells_Seurat,
+  "high",
+  "low"
+)
+
+markers_Seurat <- FindMarkers(
+  pbmc,
+  ident.1 = "high",
+  ident.2 = "low",
+  group.by = "SeuratScore_group",
+  logfc.threshold = 0,  
+  min.pct = 0.05,
+  test.use = "wilcox"
+)
+
+top_genes_Seurat <- rownames(
+  markers_Seurat[
+    order(markers_Seurat$avg_log2FC, decreasing = TRUE),
+  ]
+)[1:50]
+
+extended_gene_set <- extend_gene_set(genes, top_genes_Seurat)
+# print(extended_gene_set)
+
 # Visualization: per class and UMAP
 print("--- Visualisierung ---")
 

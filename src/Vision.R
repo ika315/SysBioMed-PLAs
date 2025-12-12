@@ -62,6 +62,37 @@ vision_score <- as.numeric(vision_auc[, "Platelet_Signature"])
 pbmc$Vision_Platelet_Signature <- vision_score
 score_name <- "Vision_Platelet_Signature"
 
+# extracting high ranked genes for extend gene set method
+high_cells_Vision <- names(pbmc[[score_name, drop = TRUE]])[
+  pbmc[[score_name, drop = TRUE]] >
+    quantile(pbmc[[score_name, drop = TRUE]], 0.9)
+]
+
+pbmc$Vision_group <- ifelse(
+  colnames(pbmc) %in% high_cells_Vision,
+  "high",
+  "low"
+)
+
+markers_Vision <- FindMarkers(
+  pbmc,
+  ident.1 = "high",
+  ident.2 = "low",
+  group.by = "Vision_group",
+  logfc.threshold = 0,    # no pre-filtering
+  min.pct = 0.05,
+  test.use = "wilcox"
+)
+
+top_genes_Vision <- rownames(
+  markers_Vision[
+    order(markers_Vision$avg_log2FC, decreasing = TRUE),
+  ]
+)[1:50]
+
+extended_gene_set <- extend_gene_set(genes, top_genes_Vision)
+#print(extended_gene_set)
+
 # ----------------------------------------------------
 # VISUALIZATION
 # ----------------------------------------------------

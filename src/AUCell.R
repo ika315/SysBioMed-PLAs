@@ -46,15 +46,42 @@ score_name <- "AUCell_Platelet_Signature"
 # extracting high ranked genes for extend gene set method
 high_cells_AUC <- names(pbmc$AUCell_Platelet_Signature)[pbmc$AUCell_Platelet_Signature > quantile(pbmc$AUCell_Platelet_Signature, 0.9)]
 
+pbmc$AUCell_group <- ifelse(
+  colnames(pbmc) %in% high_cells_AUC,
+  "high",
+  "low"
+)
+
+markers_AUC <- FindMarkers(
+  pbmc,
+  ident.1 = "high",
+  ident.2 = "low",
+  group.by = "AUCell_group",
+  logfc.threshold = 0,     
+  min.pct = 0.05,
+  test.use = "wilcox"
+)
+
+top_genes_AUC <- rownames(
+  markers_AUC[
+    order(markers_AUC$avg_log2FC, decreasing = TRUE),
+  ]
+)[1:50]
+
+extended_gene_set <- extend_gene_set(genes, top_genes_AUC)
+
+# intuitive version
+# extracting high ranked genes for extend gene set method
+# high_cells_AUC <- names(pbmc$AUCell_Platelet_Signature)[pbmc$AUCell_Platelet_Signature > quantile(pbmc$AUCell_Platelet_Signature, 0.9)]
 # matrix of gene expression ranks where each col=cell, each row=gene, cell=how highly is gene expressed in cell
-rank_mat <- assay(cells_rankings)
+#rank_mat <- assay(cells_rankings)
 
 # collapse per-cell rankings to one global ranking (each gene has one number)
 # across platelet-enriched cells, where does this gene usually appear in the expression ranking?
-mean_rank <- rowMeans(rank_mat[, high_cells_AUC, drop=F]) # the smaller the rank the higher its position so higher expression
+#mean_rank <- rowMeans(rank_mat[, high_cells_AUC, drop=F]) # the smaller the rank the higher its position so higher expression
 
-top_genes_AUC <- names(sort(mean_rank))[1:200]
-extended_gene_set <- extend_gene_set(genes, top_genes_AUC)
+#top_genes_AUC <- names(sort(mean_rank))[1:50]
+#extended_gene_set <- extend_gene_set(genes, top_genes_AUC)
 #print(extended_gene_set)
 
 # Visulaization

@@ -43,6 +43,37 @@ pbmc <- AddModuleScore_UCell(
 )
 score_name <- "Platelet_Signature_UCell"
 
+# extracting high ranked genes for extend gene set method
+high_cells_UC <- names(pbmc[[score_name, drop = TRUE]])[
+  pbmc[[score_name, drop = TRUE]] >
+    quantile(pbmc[[score_name, drop = TRUE]], 0.9)
+]
+
+pbmc$UCell_group <- ifelse(
+  colnames(pbmc) %in% high_cells_UC,
+  "high",
+  "low"
+)
+
+markers_UC <- FindMarkers(
+  pbmc,
+  ident.1 = "high",
+  ident.2 = "low",
+  group.by = "UCell_group",
+  logfc.threshold = 0,
+  min.pct = 0.05,
+  test.use = "wilcox"
+)
+
+top_genes_UC <- rownames(
+  markers_UC[
+    order(markers_UC$avg_log2FC, decreasing = TRUE),
+  ]
+)[1:50]
+
+extended_gene_set <- extend_gene_set(genes, top_genes_UC)
+#print(extended_gene_set)
+
 # Visualization
 print("--- Visualisierung ---")
 
