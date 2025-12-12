@@ -24,11 +24,15 @@ library(patchwork)
 library(dplyr) 
 library(tibble)
 
-# signatur definition
-sig_other <- make_signature(genes, "Platelet_Signature", "other")
+# Signatur Definition 
+# Später Platelet-Signatur hier einfügen
+T.cell.signatures <- list(
+  T_Aktiv_Sig = c("CD3E", "CD8A", "IFNG", "IL2RA") 
+)
+
 ```
 
-## 1. Datenverarbeitung und Preprocessing
+## Datenverarbeitung und Preprocessing
 
 Wir verwenden den Seurat-Beispieldatensatz pbmc3k.final. Später wird er durch das finale PLA-Dataset ersetzt. Die Preprocessing-Schritte stellen sicher, dass die Daten für das Clustering und die Scoring-Methoden vorbereitet sind.
 
@@ -50,9 +54,9 @@ pbmc <- FindClusters(pbmc, resolution = 0.8)
 print(pbmc)
 ```
 
-## 2. Methode: AddModuleScore (Seurat)
+## Methode: AddModuleScore (Seurat)
 
-### 2.1 Funktionsweise und Parameter
+### Funktionsweise und Parameter
 
 Diese Methode berechnet den Score als durchschnittliche Expression der Signatur-Gene minus der durchschnittlichen Expression von Kontroll-Genen. Die Kontroll-Gene werden zufällig ausgewählt, aber auf der Basis der Expression in Bins gematcht. Das soll zelluläre Biases (z.B. Zellgröße) korrigieren.
 
@@ -61,12 +65,12 @@ Wichtigste Parameter:
 -   `ctrl` (default: 100): Anzahl der Kontroll-Gene pro Signatur
 -   `nbin` (default: 24): Anzahl der Bins, in die Gene für das Matching eingeteilt werden
 
-### 2.2 Scoring und Visualisierung
+### Scoring und Visualisierung
 
 ```{r, echo=TRUE}
 pbmc <- AddModuleScore(
   pbmc, 
-  features = sig_other, 
+  features = T.cell.signatures, 
   name = "Seurat_Score"
 )
 score_name_seurat <- "Seurat_Score1"
@@ -83,9 +87,9 @@ p2_seurat <- VlnPlot(pbmc, features = score_name_seurat, group.by = "seurat_clus
 p1_seurat | p2_seurat
 ```
 
-## 3. Methode: UCell
+## Methode: UCell
 
-### 3. 1 Funktionsweise und Parameter
+### Funktionsweise und Parameter
 
 UCell ist ein Rang-basierter Score (AUC), der durch eine Uniformity Correction weniger sensitiv gegenüber der Signaturgröße ist.
 
@@ -93,13 +97,13 @@ Wichtigster Parameter:
 
 -   `maxRank` (default \~1500): Der maximale Rang (Anzahl der Gene) in der zellspezifischen Gen-Rangliste, bis zu dem die AUC (Area Under the Curve) berechnet wird. Für ein schwaches PLA-Signal muss dieser Wert ggf. erhöht werden.
 
-### 3. 2 Experiment mit `maxRank` (Default vs. Modifiziert)
+### Experiment mit `maxRank` (Default vs. Modifiziert)
 
 Wir berechnen den Score mit dem typischen Standardwert ≈1500 und einem modifizierten Wert ≈5000, um den Effekt zu zeigen.
 
 ```{r ucell_scoring, echo=TRUE}
 
-SIGNATURE_NAME <- names(sig_other)[1] 
+SIGNATURE_NAME <- names(T.cell.signatures)[1] 
 
 MAX_RANK_DEFAULT <- 1500 
 MAX_RANK_MODIFIED <- 5000
@@ -107,7 +111,7 @@ MAX_RANK_MODIFIED <- 5000
 # DEFAULT BERECHNUNG
 pbmc <- AddModuleScore_UCell(
   pbmc, 
-  features = sig_other, 
+  features = T.cell.signatures, 
   assay = "RNA",
   name = "UCellDefault", 
   maxRank = MAX_RANK_DEFAULT 
@@ -120,7 +124,7 @@ score_name_ucell_default <- "UCell_Default_Score"
 # MODIFIZIERTE BERECHNUNG
 pbmc <- AddModuleScore_UCell(
   pbmc, 
-  features = sig_other, 
+  features = T.cell.signatures, 
   assay = "RNA",
   name = "UCellModified", 
   maxRank = MAX_RANK_MODIFIED 
@@ -132,7 +136,7 @@ score_name_ucell_modified <- "UCell_Modified_Score"
 
 ```
 
-### 3. Visualisierung
+### Visualisierung
 
 ```{r, echo=TRUE}
 p1_ucell <- FeaturePlot(pbmc, features = score_name_ucell_default, reduction = "umap") + 
@@ -154,9 +158,9 @@ p3_ucell | p4_ucell
 
 ```
 
-## 4. Methode: AUCell
+## Methode: AUCell
 
-### 4. 1 Funktionsweise und Parameter
+### Funktionsweise und Parameter
 
 AUCell ist ebenfalls ein Rang-basierter Score. Hier wird direkt mit den Ranks der Expression und der AUC gearbeitet.
 
@@ -164,7 +168,7 @@ AUCell ist ebenfalls ein Rang-basierter Score. Hier wird direkt mit den Ranks de
 
     -   `aucMaxRank` (default: 5% der Gene): Der maximale Rang als Prozentsatz der Gesamt-Genanzahl, bis zu dem die AUC berechnet wird. Für ein schwaches PLA-Signal muss dieser Wert ggf. erhöht werden.
 
-### 4. 2 Experiment mit `aucMaxRank` (Default vs. Modifiziert)
+### Experiment mit `aucMaxRank` (Default vs. Modifiziert)
 
 Wir berechnen den Score mit dem Standardwert 5% und dem modifizierten Wert 20%.
 
@@ -178,13 +182,13 @@ cells_rankings <- AUCell_buildRankings(expression_matrix, plotStats=FALSE)
 total_genes <- nrow(expression_matrix)
 
 # DEFAULT BERECHNUNG
-cells_AUC_default <- AUCell_calcAUC(sig_other, cells_rankings, aucMaxRank = AUC_MAX_RANK_PC_DEFAULT * total_genes)
+cells_AUC_default <- AUCell_calcAUC(T.cell.signatures, cells_rankings, aucMaxRank = AUC_MAX_RANK_PC_DEFAULT * total_genes)
 pbmc$AUCell_Score_Default <- as.numeric(getAUC(cells_AUC_default)[1, ])
 score_name_aucell_default <- "AUCell_Score_Default"
 
 
 # MODIFIZIERTE BERECHNUNG 
-cells_AUC_modified <- AUCell_calcAUC(sig_other, cells_rankings, aucMaxRank = AUC_MAX_RANK_PC_MODIFIED * total_genes)
+cells_AUC_modified <- AUCell_calcAUC(T.cell.signatures, cells_rankings, aucMaxRank = AUC_MAX_RANK_PC_MODIFIED * total_genes)
 pbmc$AUCell_Score_Modified <- as.numeric(getAUC(cells_AUC_modified)[1, ])
 score_name_aucell_modified <- "AUCell_Score_Modified"
 ```
@@ -210,7 +214,7 @@ p3_aucell | p4_aucell
 
 ```
 
-## 5. Zusammenfassung 
+## Zusammenfassung
 
 +--------------------+----------------------------------------------------+-----------------------------+------------------------------------------------------------------+------------------------------------------------------------------------------------------+
 | Methode            | Kernprinzip                                        | Wichtige Parameter für PLAs | Stärke                                                           | Schwäche                                                                                 |
@@ -226,9 +230,11 @@ p3_aucell | p4_aucell
 
 ## Zelltyp-spezifische Z-Score-Normalisierung
 
-Für die PLA-Detektion wenden wir noch die Normalisierung der Scores innerhalb jedes Immunzelltyps (Cluster) an, um festzustellen, ob die Platelet-Transkripte die erwarteten Hintergrundwerte für diesen spezifischen Zelltyp überschreiten.
+Um festzustellen, ob ein Leukocyt ein echtes Platelet-Aggregat (PLA) ist, darf ich nicht einfach den höchsten Score im ganzen Datensatz suchen. Ich muss prüfen, ob die Zelle innerhalb ihres eigenen Zelltyps eine hohe Platelet-Anreicherung aufweist.
 
-Hier wird jetzt der modifizierte AUCell-Score (`AUCell_Score_Modified`) verwendet. 
+Hier wende ich die Zelltyp-spezifische Z-Score-Normalisierung an, um festzustellen, ob die Platelet-Transkripte die erwarteten Hintergrundwerte für diesen spezifischen Zelltyp überschreiten. Ich verwende dafür den modifizierten AUCell-Score (`AUCell_Score_Modified`), da der erhöhte `aucMaxRank` diesen Score sensitiver für unser erwartetes schwaches Platelet-Signal macht.
+
+Der Z-Score (oder Standard-Score) misst, wie viele Standardabweichungen (σ) ein individueller Roh-Score vom Mittelwert (μ) seiner Gruppe (C) entfernt ist. Ich berechne den Mittelwert (μ) und die Standardabweichung (σ) des AUCell-Scores separat für jeden Seurat-Cluster. Anschließend ziehe ich für jede Zelle ihren Cluster-Mittelwert ab und teile durch die Cluster-Standardabweichung. Dann sind alle Cluster zentriert um Null im Z-Score-Plot. Der finale Z-Score-Plot erlaubt es uns, einen klaren Schwellenwert (z.B. Z=2) festzulegen, um die potenziellen PLAs im Datensatz zu flaggen.
 
 ```{r zscore_normalization, echo=TRUE}
 score_to_normalize <- "AUCell_Score_Modified"
@@ -277,7 +283,30 @@ p2_zscore <- VlnPlot(pbmc, features = score_name_zscore, group.by = "seurat_clus
 p1_zscore | p2_zscore
 ```
 
+## Mögliche Score-Modifications
 
+### Gewichtung der Gene (Weighted AUC)
 
+Sowohl AUCell als auch UCell behandeln aktuell jedes Gen als gleich wichtig. Die Idee wäre jedem Platelet-Marker-Gen ein Gewicht zu zuweisen, basierend auf seiner typischen Expression in reinen Platelets (aus bulk RNA-seq oder reinen scRNA-seq Platelet-Clustern).
 
+Um die Gewichtung der Gene in AUCell umzusetzen, müsste man die Berechnung der AUC anpassen, indem man jedem Gen g ein Gewicht wg​ zuweist:
 
+1.  Das Gewichtwg​ für jedes Platelet-Gen g  definieren (basierend auf seiner Bedeutung oder Expression in reinen Platelets)
+
+2.  Rang-Score für die Zelle  i  berechnen, nicht nur als die Anreicherung der Gene, sondern als die gewichtete Anreicherung der Gene.
+
+Anstatt einfach alle Signatur-Gene im Top-Rang gleich zu zählen, würde man die relative Position und das Gewicht des Gens kombinieren:
+
+### Hybrid-Score
+
+Erstellung eines gewichteten Hybrid-Scores, der die Stärken von AUCell/UCell und AddModuleScore kombiniert.
+
+$$\text{PLA}_{\text{Hybrid}} = \alpha \cdot \text{Score}_{\text{Rang}} + \beta \cdot \text{Score}_{\text{Expression}}$$
+
+Das involviert:
+
+1.  Berechnung des Rang-basierten Scores mit AUCell
+2.  Berechnung des normierten Expressions-Scores (AddModuleScore)
+3.  Kombinieren beider Scores
+
+Die Herausforderung liegt dann in der Wahl von alpha und beta. Man könnte α=0.7 und β=0.3 wählen, um den Rang-Score stärker zu gewichten, da dieser robuster ist.
