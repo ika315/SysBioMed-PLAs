@@ -8,3 +8,5 @@
 .ipynb_checkpoints/
 .idea/
 .vscode/
+
+*.rds

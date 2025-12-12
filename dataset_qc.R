@@ -15,14 +15,14 @@ seu <- CreateSeuratObject(
   counts = counts,  
   project = "PlateletEnrichment",
   min.cells = 3,
-  min.features = 50 
+  min.features = 20 
 )
 
 tod <- counts
 tod <- tod[Matrix::rowSums(tod) > 0, , drop = FALSE]
-tod <- tod[, Matrix::colSums(tod) > 0, drop = FALSE]  # HUGE RAM saver
+tod <- tod[, Matrix::colSums(tod) > 2, drop = FALSE]  
 
-flt <- GetAssayData(seu, slot = "counts")             # echte Zellen
+flt <- GetAssayData(seu, slot = "counts")            
 flt <- flt[rownames(tod), , drop = FALSE]    
 
 rm(counts)
@@ -47,7 +47,6 @@ FeatureScatter(seu, feature1 = "nCount_RNA", feature2 = "percent.ribo")
 seu <- subset(
   seu,
   subset = percent.mt < 20 &
-           percent.ribo < 40 &
            percent.hb < 5
 )
 
@@ -56,7 +55,11 @@ dims.use <- 1:20
 
 seu <- NormalizeData(seu)
 
-seu <- FindVariableFeatures(seu, selection.method = "vst", nfeatures = 2000)
+# seu <- FindVariableFeatures(seu, selection.method = "vst", nfeatures = 2000)
+
+hvgs <- devianceFeatureSelection(seu)
+VariableFeatures(seu) <- hvgs[1:2000]
+
 
 seu <- ScaleData(seu) # vars to regress?
 
@@ -67,6 +70,8 @@ seu <- FindNeighbors(seu, dims = dims.use)
 seu <- FindClusters(seu, resolution = 0.5)
 
 soupx_groups <- seu$seurat_clusters
+
+# TODO annotate platelet clusters
 
 # soup
 
@@ -111,7 +116,6 @@ seu_sx[["percent.hb"]] <- PercentageFeatureSet(seu_sx, pattern = "^HB(?!P)", reg
 seu_sx <- subset(
   seu_sx,
   subset = percent.mt < 20 &
-           percent.ribo < 40 &
            percent.hb < 5
 )
 
@@ -119,7 +123,10 @@ seu_sx <- subset(
 
 seu_sx <- NormalizeData(seu_sx, normalization.method = "LogNormalize",)
 
-seu_sx <- FindVariableFeatures(seu_sx, selection.method = "vst", nfeatures = 2000)
+# seu_sx <- FindVariableFeatures(seu_sx, selection.method = "vst", nfeatures = 2000)
+
+hvgs <- devianceFeatureSelection(seu_sx)
+VariableFeatures(seu_sx) <- hvgs[1:2000]
 
 seu_sx <- ScaleData(seu_sx, vars.to.regress = c("nCount_RNA", "percent.mt")) # todo: andere features hinzufügen?
 
@@ -156,9 +163,12 @@ seu_sx <- subset(seu_sx, subset = scDblFinder_class == "singlet")
 
 seu_sx <- NormalizeData(seu_sx, normalization.method = "LogNormalize",)
 
-seu_sx <- FindVariableFeatures(seu_sx, selection.method = "vst", nfeatures = 2000)
+# seu_sx <- FindVariableFeatures(seu_sx, selection.method = "vst", nfeatures = 2000)
 
-seu_sx <- ScaleData(seu_sx) #, vars.to.regress = c("nCount_RNA", "percent.mt")) # todo: andere features hinzufügen?
+hvgs <- devianceFeatureSelection(seu_sx)
+VariableFeatures(seu_sx) <- hvgs[1:2000]
+
+seu_sx <- ScaleData(seu_sx) #, vars.to.regress = c("percent.mt")) # todo: andere features hinzufügen?
 
 seu_sx <- RunPCA(seu_sx)
 
@@ -167,5 +177,7 @@ seu_sx <- FindNeighbors(seu_sx, dims = dims.use)
 seu_sx <- FindClusters(seu_sx, resolution = 0.5)
 
 seu_sx <- RunUMAP(seu_sx, dims = dims.use)
-
+saveRDS(seu_sx, file = "data/seu_sx_final.rds")
 print(DimPlot(seu_sx, group.by = "seurat_clusters", label = TRUE))
+
+# seu_sx <- readRDS("data/seu_sx_final.rds")
