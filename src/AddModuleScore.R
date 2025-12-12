@@ -6,7 +6,6 @@
 library(Seurat)
 library(SeuratData)
 
-print("Lade und verarbeite pbmc3k (ca. 2700 Zellen)...")
 data("pbmc3k.final")
 pbmc <- pbmc3k.final 
 
