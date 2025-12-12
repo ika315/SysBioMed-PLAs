@@ -28,7 +28,11 @@ pbmc <- FindClusters(pbmc, resolution = 0.8)
   # T_Aktiv_Sig = c("CD3E", "CD8A", "IFNG", "IL2RA") 
 # )
 
+base_dir <- getwd()
+gene_csv <- file.path(base_dir, "data", "updated_gene_list.csv")
+genes <- read_gene_list(gene_csv)
 sig_other <- make_signature(genes, "Platelet_Signature", "other")
+
 
 print(pbmc)
 
@@ -39,36 +43,18 @@ expression_matrix <- GetAssayData(pbmc, slot = "data")
 cells_rankings <- AUCell_buildRankings(expression_matrix, plotStats=FALSE)
 cells_AUC <- AUCell_calcAUC(sig_other, cells_rankings)
 
-#
 pbmc$AUCell_Platelet_Signature <- as.numeric(getAUC(cells_AUC)[1, ])
 score_name <- "AUCell_Platelet_Signature" 
 
 # extracting high ranked genes for extend gene set method
-high_cells_AUC <- names(pbmc$AUCell_Platelet_Signature)[pbmc$AUCell_Platelet_Signature > quantile(pbmc$AUCell_Platelet_Signature, 0.9)]
-
-pbmc$AUCell_group <- ifelse(
-  colnames(pbmc) %in% high_cells_AUC,
-  "high",
-  "low"
+res_auc <- extend_gene_set(
+  pbmc = pbmc,
+  base_genes = genes,
+  score_name = "AUCell_Platelet_Signature"
 )
 
-markers_AUC <- FindMarkers(
-  pbmc,
-  ident.1 = "high",
-  ident.2 = "low",
-  group.by = "AUCell_group",
-  logfc.threshold = 0,     
-  min.pct = 0.05,
-  test.use = "wilcox"
-)
-
-top_genes_AUC <- rownames(
-  markers_AUC[
-    order(markers_AUC$avg_log2FC, decreasing = TRUE),
-  ]
-)[1:50]
-
-extended_gene_set <- extend_gene_set(genes, top_genes_AUC)
+extended_gene_set_auc <- res_auc$extended_genes
+extended_gene_set_auc
 
 # intuitive version
 # extracting high ranked genes for extend gene set method

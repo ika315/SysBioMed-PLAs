@@ -24,9 +24,55 @@ read_gene_list <- function(gene_csv) {
 }
 
 # METHOD THAT EXTENDS EXISTING GENE SET WITH ENRICHED GENES FROM ENRICHMENT METHODS
-extend_gene_set <- function(genes=genes, gene_set) {
-  extended_gene_set <- union(genes, gene_set)
-  return(extended_gene_set)
+extend_gene_set <- function(
+    pbmc,
+    base_genes,
+    score_name,
+    top_n = 50,
+    high_quantile = 0.9,
+    min.pct = 0.05,
+    test.use = "wilcox") {
+  score_vec <- pbmc[[score_name, drop = TRUE]]
+  
+  high_cells <- names(score_vec)[
+    score_vec > quantile(score_vec, high_quantile)
+  ]
+  
+  group_col <- paste0(score_name, "_group")
+  pbmc[[group_col]] <- ifelse(
+    colnames(pbmc) %in% high_cells,
+    "high",
+    "low"
+  )
+  
+  markers <- FindMarkers(
+    pbmc,
+    ident.1 = "high",
+    ident.2 = "low",
+    group.by = group_col,
+    logfc.threshold = 0, # test all genes
+    min.pct = min.pct, # genes must be expressed in at least 5% of cells in either group
+    test.use = test.use
+  )
+  
+  # outputs a dataframe with one row per gene
+  # avg_log2FC -> effect size
+  # p_val & p_val_adj
+  # pct.1 -> % expressed in high cells
+  # pct.2 -> % expressed in low cells
+  
+  top_genes <- rownames(
+    markers[order(markers$avg_log2FC, decreasing = TRUE), ]
+  )[1:top_n]
+  
+  
+  extended <- union(base_genes, top_genes)
+  
+  return(list(
+    extended_genes = extended,
+    top_genes = top_genes,
+    markers = markers
+  ))
 }
 
 # METHOD THAT CREATES SIGNATURE OBJECT FOR THE ENRICHMENT METHODS OUT OF THE KNOWN GENES
@@ -53,16 +99,4 @@ make_signature <- function(genes, sig_name = "Signature", method = "other") {
     return(sig_obj)
   }
 }
-
-# RUNNING THE METHODS
-# read in genes
-base_dir <- getwd()
-gene_csv <- file.path(base_dir, "data", "updated_gene_list.csv")
-genes <- read_gene_list(gene_csv)
-
-print(genes)
-
-# create sig lists for enrichment methods
-sig_other <- make_signature(genes, "Platelet_Signature", "other")
-sig_vision <- make_signature(genes = genes, sig_name = "Platelet_Signature", method = "vision")
 

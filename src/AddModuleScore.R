@@ -27,6 +27,9 @@ pbmc <- FindClusters(pbmc, resolution = 0.8)
 # T_Aktiv_Sig = c("CD3E", "CD8A", "IFNG", "IL2RA") 
 # )
 
+base_dir <- getwd()
+gene_csv <- file.path(base_dir, "data", "updated_gene_list.csv")
+genes <- read_gene_list(gene_csv)
 sig_other <- make_signature(genes, "Platelet_Signature", "other")
 
 print(pbmc)
@@ -42,35 +45,14 @@ pbmc <- AddModuleScore(
 score_name <- "Seurat_Score1" 
 
 # extracting high ranked genes for extend gene set method
-high_cells_Seurat <- names(pbmc[[score_name, drop = TRUE]])[
-  pbmc[[score_name, drop = TRUE]] >
-    quantile(pbmc[[score_name, drop = TRUE]], 0.9)
-]
-
-pbmc$SeuratScore_group <- ifelse(
-  colnames(pbmc) %in% high_cells_Seurat,
-  "high",
-  "low"
+res_seurat <- extend_gene_set(
+  pbmc = pbmc,
+  base_genes = genes,
+  score_name = "Seurat_Score1"
 )
 
-markers_Seurat <- FindMarkers(
-  pbmc,
-  ident.1 = "high",
-  ident.2 = "low",
-  group.by = "SeuratScore_group",
-  logfc.threshold = 0,  
-  min.pct = 0.05,
-  test.use = "wilcox"
-)
-
-top_genes_Seurat <- rownames(
-  markers_Seurat[
-    order(markers_Seurat$avg_log2FC, decreasing = TRUE),
-  ]
-)[1:50]
-
-extended_gene_set <- extend_gene_set(genes, top_genes_Seurat)
-# print(extended_gene_set)
+extended_gene_set_seurat <- res_seurat$extended_genes
+extended_gene_set_seurat
 
 # Visualization: per class and UMAP
 print("--- Visualisierung ---")

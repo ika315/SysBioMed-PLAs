@@ -30,6 +30,9 @@ pbmc <- FindClusters(pbmc, resolution = 0.8)
 # )
 
 # platelet version
+base_dir <- getwd()
+gene_csv <- file.path(base_dir, "data", "updated_gene_list.csv")
+genes <- read_gene_list(gene_csv)
 sig_other <- make_signature(genes, "Platelet_Signature", "other")
 
 print(pbmc)
@@ -44,35 +47,14 @@ pbmc <- AddModuleScore_UCell(
 score_name <- "Platelet_Signature_UCell"
 
 # extracting high ranked genes for extend gene set method
-high_cells_UC <- names(pbmc[[score_name, drop = TRUE]])[
-  pbmc[[score_name, drop = TRUE]] >
-    quantile(pbmc[[score_name, drop = TRUE]], 0.9)
-]
-
-pbmc$UCell_group <- ifelse(
-  colnames(pbmc) %in% high_cells_UC,
-  "high",
-  "low"
+res_ucell <- extend_gene_set(
+  pbmc = pbmc,
+  base_genes = genes,
+  score_name = "Platelet_Signature_UCell"
 )
 
-markers_UC <- FindMarkers(
-  pbmc,
-  ident.1 = "high",
-  ident.2 = "low",
-  group.by = "UCell_group",
-  logfc.threshold = 0,
-  min.pct = 0.05,
-  test.use = "wilcox"
-)
-
-top_genes_UC <- rownames(
-  markers_UC[
-    order(markers_UC$avg_log2FC, decreasing = TRUE),
-  ]
-)[1:50]
-
-extended_gene_set <- extend_gene_set(genes, top_genes_UC)
-#print(extended_gene_set)
+extended_gene_set_ucell <- res_ucell$extended_genes
+extended_gene_set_ucell
 
 # Visualization
 print("--- Visualisierung ---")

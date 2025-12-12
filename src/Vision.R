@@ -26,7 +26,9 @@ pbmc <- FindClusters(pbmc, resolution = 0.8)
 
 # gene signature 
 # need to put signature genes into different format for vision
-
+base_dir <- getwd()
+gene_csv <- file.path(base_dir, "data", "updated_gene_list.csv")
+genes <- read_gene_list(gene_csv)
 sig_vision <- make_signature(genes = genes, sig_name = "Platelet_Signature", method = "vision")
 
 print(pbmc)
@@ -63,35 +65,14 @@ pbmc$Vision_Platelet_Signature <- vision_score
 score_name <- "Vision_Platelet_Signature"
 
 # extracting high ranked genes for extend gene set method
-high_cells_Vision <- names(pbmc[[score_name, drop = TRUE]])[
-  pbmc[[score_name, drop = TRUE]] >
-    quantile(pbmc[[score_name, drop = TRUE]], 0.9)
-]
-
-pbmc$Vision_group <- ifelse(
-  colnames(pbmc) %in% high_cells_Vision,
-  "high",
-  "low"
+res_vision <- extend_gene_set(
+  pbmc = pbmc,
+  base_genes = genes,
+  score_name = "Vision_Platelet_Signature"
 )
 
-markers_Vision <- FindMarkers(
-  pbmc,
-  ident.1 = "high",
-  ident.2 = "low",
-  group.by = "Vision_group",
-  logfc.threshold = 0,    # no pre-filtering
-  min.pct = 0.05,
-  test.use = "wilcox"
-)
-
-top_genes_Vision <- rownames(
-  markers_Vision[
-    order(markers_Vision$avg_log2FC, decreasing = TRUE),
-  ]
-)[1:50]
-
-extended_gene_set <- extend_gene_set(genes, top_genes_Vision)
-#print(extended_gene_set)
+extended_gene_set_vision <- res_vision$extended_genes
+extended_gene_set_vision
 
 # ----------------------------------------------------
 # VISUALIZATION
