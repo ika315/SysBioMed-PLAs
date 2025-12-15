@@ -100,3 +100,20 @@ make_signature <- function(genes, sig_name = "Signature", method = "other") {
   }
 }
 
+
+gmt_dir_to_csv <- function(gmt_dir) {
+  files <- list.files(gmt_dir, full.names = TRUE)
+  
+  for (f in files) {
+    genes <- qusage::read.gmt(f)[[1]]
+    
+    write.csv(
+      data.frame(geneName = genes),
+      file = sub("\\.gmt$", ".csv", f),
+      row.names = FALSE, quote = FALSE
+    )
+  }
+}
+
+gmt_dir_to_csv("/Users/irem/SysBioMed-PLAs/data/gmt_lists")
+
