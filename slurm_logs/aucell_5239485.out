@@ -1,0 +1,30 @@
+Starte R-Skript: AUCell.R
+Verwende Umgebung: pla
+[1] "Lade prozessiertes Seurat-Objekt: ~/SysBioMed-PLAs/data/seu_sx_final.rds"
+67 genes were extracted from file.
+character(0)
+An object of class Seurat 
+21343 features across 154539 samples within 1 assay 
+Active assay: RNA (21343 features, 2000 variable features)
+ 3 layers present: counts, data, scale.data
+ 2 dimensional reductions calculated: pca, umap
+[1] "--- Berechne AUCell Score ---"
+ Named num [1:154539] 0.1323 0.046 0.0603 0.144 0.084 ...
+ - attr(*, "names")= chr [1:154539] "L1_AAACCCAAGAAACTCA" "L1_AAACCCAAGACATACA" "L1_AAACCCACAACTGGTT" "L1_AAACCCACACGTACTA" ...
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+0.00000 0.06257 0.08664 0.09801 0.12421 0.67269 
+[1] "--- Visualisierung ---"
+null device 
+          1 
+null device 
+          1 
+[1] "Führe Z-Score Normalisierung durch..."
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+-1.7848 -0.6455 -0.2070  0.0000  0.4771 10.4650 
+null device 
+          1 
+[1] "UMAP Z-Score Plot gespeichert: /nfs/home/students/a.dersch/gitplots03_AUCell_UMAP_seu_sx_final_ZScore.png"
+null device 
+          1 
+[1] "Violin Z-Score Plot gespeichert: /nfs/home/students/a.dersch/gitplots03_AUCell_VlnPlot_seu_sx_final_ZScore.png"
+Job AUCell beendet.

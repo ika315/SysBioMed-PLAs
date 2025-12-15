@@ -1,0 +1,52 @@
+Loading required package: SeuratObject
+Loading required package: sp
+
+Attaching package: ‘SeuratObject’
+
+The following objects are masked from ‘package:base’:
+
+    intersect, t
+
+Warning: The following arguments are not used: reductions, images
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+New names:
+• `` -> `...3`
+Warning in .AUCell_calcAUC(geneSets = geneSets, rankings = rankings, nCores = nCores,  :
+  Using only the first 100 genes (aucMaxRank) to calculate the AUC.
+Genes in the gene sets NOT available in the dataset: 
+	Platelet_Signature: 	49 (73% of 67)
+For a (much!) faster implementation of the Wilcoxon Rank Sum Test,
+(default method for FindMarkers) please install the presto package
+--------------------------------------------
+install.packages('devtools')
+devtools::install_github('immunogenomics/presto')
+--------------------------------------------
+After installation of presto, Seurat will automatically use the more 
+efficient implementation (no further action necessary).
+This message will be shown once per session
+Error in `object[[reduction]]`:
+! ‘umap’ not found in this Seurat object
+ 
+Backtrace:
+     ▆
+  1. └─Seurat::FeaturePlot(pbmc, features = score_name, reduction = "umap")
+  2.   ├─base::paste0(Key(object = object[[reduction]]), dims)
+  3.   ├─SeuratObject::Key(object = object[[reduction]])
+  4.   ├─object[[reduction]]
+  5.   └─SeuratObject:::`[[.Seurat`(object, reduction)
+  6.     └─base::tryCatch(...)
+  7.       └─base (local) tryCatchList(expr, classes, parentenv, handlers)
+  8.         └─base (local) tryCatchOne(expr, names, parentenv, handlers[[1L]])
+  9.           └─value[[3L]](cond)
+ 10.             └─rlang::abort(...)
+Execution halted

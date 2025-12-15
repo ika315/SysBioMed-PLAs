@@ -17,7 +17,6 @@ print(paste("Lade prozessiertes Seurat-Objekt:", path))
 pbmc <- readRDS(path)
 
 DefaultAssay(pbmc) <- "RNA"
-#pbmc <- DietSeurat(pbmc, assays = "RNA", misc = FALSE, images = FALSE) 
 pbmc <- DietSeurat(
   pbmc,
   assays = "RNA",
@@ -28,12 +27,13 @@ pbmc <- DietSeurat(
 )
 
 # Preprocessing
-#pbmc <- NormalizeData(pbmc)
-#pbmc <- FindVariableFeatures(pbmc)
-#pbmc <- ScaleData(pbmc) 
-#pbmc <- RunPCA(pbmc, features = VariableFeatures(object = pbmc))
-#pbmc <- RunUMAP(pbmc, dims = 1:10)
-#pbmc <- FindNeighbors(pbmc, dims = 1:10)
+pbmc <- NormalizeData(pbmc, verbose = FALSE)
+pbmc <- FindVariableFeatures(pbmc, verbose = FALSE)
+pbmc <- ScaleData(pbmc, verbose = FALSE) 
+pbmc <- RunPCA(pbmc, features = VariableFeatures(object = pbmc), verbose = FALSE)
+#pbmc <- RunUMAP(pbmc, dims = 1:10, verbose = FALSE)
+pbmc <- FindNeighbors(pbmc, dims = 1:10, verbose = FALSE)
+pbmc <- RunUMAP(pbmc, dims = 1:10, verbose = FALSE)
 #pbmc <- FindClusters(pbmc, resolution = 0.8)
 
 # Signatur Definition (anpassen)
@@ -53,8 +53,8 @@ print(pbmc)
 # SCORING 
 print("--- Berechne AUCell Score ---")
 
-features_to_use <- VariableFeatures(pbmc)
-expression_matrix <- GetAssayData(pbmc, layer = "data")[features_to_use, ]
+#features_to_use <- VariableFeatures(pbmc)
+expression_matrix <- GetAssayData(pbmc, layer = "data")
 
 cells_rankings <- AUCell_buildRankings(expression_matrix, plotStats=FALSE)
 cells_AUC <- AUCell_calcAUC(sig_other, cells_rankings)
@@ -62,15 +62,19 @@ cells_AUC <- AUCell_calcAUC(sig_other, cells_rankings)
 pbmc$AUCell_Platelet_Signature <- as.numeric(getAUC(cells_AUC)[1, ])
 score_name <- "AUCell_Platelet_Signature" 
 
-# extracting high ranked genes for extend gene set method
-res_auc <- extend_gene_set(
-  pbmc = pbmc,
-  base_genes = genes,
-  score_name = "AUCell_Platelet_Signature"
-)
+str(pbmc$AUCell_Platelet_Signature)
+summary(pbmc$AUCell_Platelet_Signature)
 
-extended_gene_set_auc <- res_auc$extended_genes
-extended_gene_set_auc
+#print("--- Extracting high ranked genes ---")
+# extracting high ranked genes for extend gene set method
+#res_auc <- extend_gene_set(
+#  pbmc = pbmc,
+#  base_genes = genes,
+#  score_name = "AUCell_Platelet_Signature"
+#)
+
+#extended_gene_set_auc <- res_auc$extended_genes
+#extended_gene_set_auc
 
 # intuitive version
 # extracting high ranked genes for extend gene set method
@@ -105,13 +109,13 @@ dev.off()
 # Z-Score
 print("Führe Z-Score Normalisierung durch...")
 
-mean_score <- mean(pbmc[[score_name]])
-sd_score <- sd(pbmc[[score_name]])
-
-pbmc$AUCell_ZScore <- (pbmc[[score_name]] - mean_score) / sd_score
+pbmc$AUCell_ZScore <- scale(pbmc[[score_name]][, 1])[, 1]
 score_plot_name <- "AUCell_ZScore"
 
+summary(pbmc$AUCell_ZScore)
+
 # UMAP Plot 
+#pbmc <- RunUMAP(pbmc, dims = 1:10)
 plot_filename_umap <- paste0(base_dir, "plots","03_AUCell_UMAP_", ds_name, "_ZScore.png")
 png(filename = plot_filename_umap, width = 1000, height = 800) 
 print(FeaturePlot(pbmc, features = score_plot_name, reduction = "umap", pt.size = 0.5))

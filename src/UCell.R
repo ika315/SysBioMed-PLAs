@@ -4,7 +4,6 @@
 # Ergebnis: Area Under the Curve (AUC)-Score basierend auf Rang-Statistik
 # ----------------------------------------------------
 library(Seurat)
-library(SeuratData)
 library(UCell)
 library(ggplot2)
 

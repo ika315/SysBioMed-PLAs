@@ -1,0 +1,43 @@
+Loading required package: SeuratObject
+Loading required package: sp
+
+Attaching package: ‘SeuratObject’
+
+The following objects are masked from ‘package:base’:
+
+    intersect, t
+
+Warning: The following arguments are not used: reductions, images
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+New names:
+• `` -> `...3`
+Warning in .AUCell_calcAUC(geneSets = geneSets, rankings = rankings, nCores = nCores,  :
+  Using only the first 100 genes (aucMaxRank) to calculate the AUC.
+Genes in the gene sets NOT available in the dataset: 
+	Platelet_Signature: 	49 (73% of 67)
+Error in `object[[reduction]]`:
+! ‘pca’ not found in this Seurat object
+ 
+Backtrace:
+     ▆
+  1. ├─Seurat::RunUMAP(pbmc, dims = 1:10)
+  2. └─Seurat:::RunUMAP.Seurat(pbmc, dims = 1:10)
+  3.   ├─SeuratObject::Embeddings(object[[reduction]])
+  4.   ├─object[[reduction]]
+  5.   └─SeuratObject:::`[[.Seurat`(object, reduction)
+  6.     └─base::tryCatch(...)
+  7.       └─base (local) tryCatchList(expr, classes, parentenv, handlers)
+  8.         └─base (local) tryCatchOne(expr, names, parentenv, handlers[[1L]])
+  9.           └─value[[3L]](cond)
+ 10.             └─rlang::abort(...)
+Execution halted

@@ -1,0 +1,95 @@
+Loading required package: SeuratObject
+Loading required package: sp
+
+Attaching package: ‘SeuratObject’
+
+The following objects are masked from ‘package:base’:
+
+    intersect, t
+
+Warning: The following arguments are not used: reductions, images
+Normalizing layer: counts
+Performing log-normalization
+0%   10   20   30   40   50   60   70   80   90   100%
+[----|----|----|----|----|----|----|----|----|----|
+**************************************************|
+Finding variable features for layer counts
+Calculating gene variances
+0%   10   20   30   40   50   60   70   80   90   100%
+[----|----|----|----|----|----|----|----|----|----|
+**************************************************|
+Calculating feature variances of standardized and clipped values
+0%   10   20   30   40   50   60   70   80   90   100%
+[----|----|----|----|----|----|----|----|----|----|
+**************************************************|
+Centering and scaling data matrix
+  |                                                                              |                                                                      |   0%  |                                                                              |===================================                                   |  50%  |                                                                              |======================================================================| 100%
+Warning: Different features in new layer data than already exists for scale.data
+PC_ 1 
+Positive:  FCN1, LYZ, CST3, MNDA, CTSS, SERPINA1, CYBB, FGL2, S100A9, NCF2 
+	   GRN, VCAN, PSAP, SPI1, TYMP, TNFAIP2, MPEG1, CSTA, AIF1, S100A8 
+	   CD14, CLEC7A, LST1, CFD, FTL, CD68, NAMPT, MS4A6A, CSF3R, CPVL 
+Negative:  IL32, TRBC2, CD3D, LTB, CD3G, IL7R, TRAC, CD2, SYNE2, TCF7 
+	   CD69, CD7, CD247, TRBC1, GZMM, RORA, ARL4C, CD27, CXCR4, LEF1 
+	   GZMA, CCR7, CCL5, OXNAD1, CTSW, CAMK4, CST7, MAL, SAMD3, BCL2 
+PC_ 2 
+Positive:  CD79A, MS4A1, BANK1, IGHM, RALGPS2, TNFRSF13C, LINC00926, IGHD, CD22, VPREB3 
+	   CD79B, AFF3, IGKC, PAX5, TCL1A, HLA-DQA1, FAM129C, BCL11A, FCRL1, COBLL1 
+	   BLK, ADAM28, HLA-DOB, MEF2C, SPIB, FCER2, P2RX5, LINC02397, TCF4, SWAP70 
+Negative:  NKG7, GZMA, CST7, PRF1, KLRD1, GNLY, FGFBP2, CTSW, CD247, GZMM 
+	   GZMB, GZMH, ARL4C, KLRF1, SPON2, ADGRG1, CD7, SAMD3, HOPX, ANXA1 
+	   IL2RB, ID2, SYNE2, MYBL1, PYHIN1, S100A4, CCL5, MATK, S1PR5, CLIC3 
+PC_ 3 
+Positive:  CD79A, MS4A1, RALGPS2, IGHM, LINC00926, IGHD, TNFRSF13C, CD79B, CD22, VPREB3 
+	   BANK1, AFF3, PAX5, CXCR4, TCL1A, FCRL1, HLA-DQA1, HLA-DQB1, CD74, ADAM28 
+	   BCL11A, PNRC1, FAM129C, SWAP70, BLK, P2RX5, COBLL1, HLA-DOB, FCER2, LINC02397 
+Negative:  TUBB1, CAVIN2, PF4, GNG11, PPBP, GP9, PRKAR2B, SPARC, CLU, TREML1 
+	   CMTM5, ACRBP, ITGA2B, MPIG6B, C2orf88, NRGN, MYL9, PTCRA, CTTN, MAP3K7CL 
+	   TSC22D1, TMEM40, MTURN, HIST1H2AC, AC147651.1, MMD, PGRMC1, RGS18, CLDN5, MYLK 
+PC_ 4 
+Positive:  GZMB, NKG7, PRF1, KLRD1, FGFBP2, GNLY, CST7, KLRF1, FCGR3A, GZMA 
+	   SPON2, GZMH, ADGRG1, CLIC3, CTSW, HOPX, IL2RB, S1PR5, TRDC, CX3CR1 
+	   C1orf21, CCL5, PRSS23, CXXC5, CEP78, MATK, TBX21, HLA-DPB1, PYHIN1, TTC38 
+Negative:  IL7R, TCF7, LEF1, MAL, TRAC, CD3D, TRABD2A, CAMK4, CCR7, CD27 
+	   CD3G, OXNAD1, LTB, TRAT1, AQP3, NELL2, LRRN3, INPP4B, TSHZ2, FHIT 
+	   VIM, RGCC, PASK, ITGA6, ADTRP, CITED4, CD44, BEX3, MYC, TOB1 
+PC_ 5 
+Positive:  IL1B, C15orf48, CCL3, CCL4, CCL4L2, TNFAIP6, TNFAIP3, CD83, G0S2, CXCL8 
+	   CCL3L1, NLRP3, KCNJ2, CXCL2, ICAM1, ACSL1, CCL20, DNAAF1, IL6, PDE4B 
+	   RNF19B, THBS1, RASGEF1B, PFKFB3, AQP9, FFAR2, KCNJ2-AS1, AP003354.2, SAMSN1, IL1A 
+Negative:  IFI30, TUBA1A, LRRC25, RHOB, CEBPA, CDKN1C, PDK4, NAAA, LMO2, HMOX1 
+	   IER5L, FOS, KLF4, HHEX, MIS18BP1, ZNF703, CSF1R, TNFSF10, SMIM25, TMSB4X 
+	   TUBA1B, P2RY13, TENT5A, LST1, CKB, KCTD12, FCGR3A, OAS1, RGS2, HES4 
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+New names:
+• `` -> `...3`
+Warning in .AUCell_calcAUC(geneSets = geneSets, rankings = rankings, nCores = nCores,  :
+  Using only the first 100 genes (aucMaxRank) to calculate the AUC.
+Genes in the gene sets NOT available in the dataset: 
+	Platelet_Signature: 	46 (69% of 67)
+Error in `object[[reduction]]`:
+! ‘umap’ not found in this Seurat object
+ 
+Backtrace:
+     ▆
+  1. └─Seurat::FeaturePlot(pbmc, features = score_name, reduction = "umap")
+  2.   ├─base::paste0(Key(object = object[[reduction]]), dims)
+  3.   ├─SeuratObject::Key(object = object[[reduction]])
+  4.   ├─object[[reduction]]
+  5.   └─SeuratObject:::`[[.Seurat`(object, reduction)
+  6.     └─base::tryCatch(...)
+  7.       └─base (local) tryCatchList(expr, classes, parentenv, handlers)
+  8.         └─base (local) tryCatchOne(expr, names, parentenv, handlers[[1L]])
+  9.           └─value[[3L]](cond)
+ 10.             └─rlang::abort(...)
+Execution halted

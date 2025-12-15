@@ -4,7 +4,6 @@
 # Ergebnis: Score ist die Differenz zwischen Signatur-Genen und Kontroll-Genen
 # ----------------------------------------------------
 library(Seurat)
-library(SeuratData)
 
 data("pbmc3k.final")
 pbmc <- pbmc3k.final 

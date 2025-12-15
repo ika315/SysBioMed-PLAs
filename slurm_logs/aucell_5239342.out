@@ -1,0 +1,34 @@
+Starte R-Skript: AUCell.R
+Verwende Umgebung: pla
+[1] "Lade prozessiertes Seurat-Objekt: ~/SysBioMed-PLAs/data/seu_sx_final.rds"
+67 genes were extracted from file.
+character(0)
+An object of class Seurat 
+21343 features across 154539 samples within 1 assay 
+Active assay: RNA (21343 features, 2000 variable features)
+ 3 layers present: counts, data, scale.data
+[1] "--- Berechne AUCell Score ---"
+  [1] "ACTB"       "ACT"        "ACTA"       "FIBB"       "VASP"      
+  [6] "ITA2B"      "ITB3"       "GPV"        "GP1BA"      "GP1BB"     
+ [11] "GPIX"       "GELS"       "PECA1"      "LYAM3"      "KPCB"      
+ [16] "GPVI"       "ITA2"       "ICAM2"      "CD63"       "TSN9"      
+ [21] "PRIO"       "FCG2A"      "LAMB1"      "CD92"       "CD41"      
+ [26] "CD61"       "CD62P"      "CD9"        "CD23"       "CD31"      
+ [31] "CD36"       "CD42a"      "CD42b"      "CD42c"      "CD42d"     
+ [36] "CD49b"      "CD49f"      "CD51"       "CD84"       "CD109"     
+ [41] "CD110"      "CD147"      "CD151"      "CD226"      "CD107a"    
+ [46] "CD107b"     "ITGA2B"     "ITGB3"      "GP9"        "GP5"       
+ [51] "SELP"       "VWF"        "PF4"        "PPBP"       "RAB27B"    
+ [56] "VAMP8"      "SNAP23"     "CLIC3"      "THBS1"      "FERMT3"    
+ [61] "TREML1"     "TUBB1"      "ANXA3"      "ANXA5"      "GNAS"      
+ [66] "SPARC"      "F13A1"      "CMTM5"      "TMEM40"     "AC147651.1"
+ [71] "CTTN"       "CLDN5"      "PDZK1IP1"   "MYL9"       "LTBP1"     
+ [76] "CLEC1B"     "ENKUR"      "CAVIN2"     "CXCL5"      "GNG11"     
+ [81] "TAL1"       "LGALSL"     "LCN2"       "MPIG6B"     "PDGFA"     
+ [86] "HGD"        "AP001189.1" "CLU"        "PTCRA"      "C2orf88"   
+ [91] "ITGB5"      "GFI1B"      "PRKAR2B"    "ACRBP"      "MYLK"      
+ [96] "SMOX"       "ESAM"       "GNAZ"       "ARHGAP6"    "TMEM158"   
+[101] "FAXDC2"     "TRIM58"     "PDE5A"      "C19orf33"   "CALD1"     
+[106] "HIST1H2BJ"  "TNNC2"      "GMPR"      
+[1] "--- Visualisierung ---"
+Job AUCell beendet.

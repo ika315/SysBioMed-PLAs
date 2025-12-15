@@ -1,0 +1,10 @@
+Loading required package: SeuratObject
+Loading required package: sp
+
+Attaching package: ‘SeuratObject’
+
+The following objects are masked from ‘package:base’:
+
+    intersect, t
+
+slurmstepd: error: *** JOB 5239418 ON kermit.exbio.wzw.tum.de CANCELLED AT 2025-12-15T13:55:05 ***

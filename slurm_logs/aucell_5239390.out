@@ -1,0 +1,11 @@
+Starte R-Skript: AUCell.R
+Verwende Umgebung: pla
+[1] "Lade prozessiertes Seurat-Objekt: ~/SysBioMed-PLAs/data/seu_sx_final.rds"
+67 genes were extracted from file.
+character(0)
+An object of class Seurat 
+21343 features across 154539 samples within 1 assay 
+Active assay: RNA (21343 features, 2000 variable features)
+ 3 layers present: counts, data, scale.data
+[1] "--- Berechne AUCell Score ---"
+[1] "--- Extracting high ranked genes ---"
