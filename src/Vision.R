@@ -56,13 +56,8 @@ print(pbmc)
 # ----------------------------------------------------
 
 # convert seurat → vision object
-# not this: 
-# expr_mat <- as.matrix(GetAssayData(pbmc, slot = "data"))
-# because vision does not want log-scaled data?
+vision_obj <- Vision(pbmc, assay = "RNA", dimRed = NULL, dimRedComponents = NULL, signatures = list(sig_vision))
 
-expr_mat <- as.matrix(GetAssayData(pbmc, layer = "counts"))
-
-vision_obj <- Vision(expr_mat, signatures = list(sig_vision))
 
 # run vision analysis (autocorrelation, AUC scoring, KNN smoothing)
 vision_obj <- analyze(vision_obj)
