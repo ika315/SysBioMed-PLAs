@@ -3,9 +3,9 @@
 #SBATCH --partition=compms-cpu-big
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=1
-#SBATCH --mem=160G
-#SBATCH --time=08:00:00
+#SBATCH --cpus-per-task=4
+#SBATCH --mem=64000
+#SBATCH --time=04:00:00
 #SBATCH --output=/nfs/home/students/i.kaciran/SysBioMed-PLAs/slurm_logs/vision_%j.out
 #SBATCH --error=/nfs/home/students/i.kaciran/SysBioMed-PLAs/slurm_logs/vision_%j.err
 

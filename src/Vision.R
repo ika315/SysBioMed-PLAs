@@ -56,8 +56,17 @@ print(pbmc)
 # ----------------------------------------------------
 
 # convert seurat → vision object
-vision_obj <- Vision(pbmc, assay = "RNA", dimRed = NULL, dimRedComponents = NULL, signatures = list(sig_vision))
+counts_mat <- GetAssayData(pbmc, assay = "RNA", layer = "counts")
+pbmc[["RNA_vision"]] <- CreateAssayObject(counts = counts_mat)
+DefaultAssay(pbmc) <- "RNA_vision"
 
+vision_obj <- Vision(
+  pbmc,
+  assay = "RNA_vision",
+  dimRed = NULL,
+  dimRedComponents = NULL,
+  signatures = list(sig_vision)
+)
 
 # run vision analysis (autocorrelation, AUC scoring, KNN smoothing)
 vision_obj <- analyze(vision_obj)
@@ -75,14 +84,14 @@ pbmc$Vision_B_Cell_Signature <- vision_score
 score_name <- "Vision_B_Cell_Signature"
 
 # extracting high ranked genes for extend gene set method
-res_vision <- extend_gene_set(
-  pbmc = pbmc,
-  base_genes = genes,
-  score_name = "Vision_B_Cell_Signature"
-)
+#res_vision <- extend_gene_set(
+#  pbmc = pbmc,
+#  base_genes = genes,
+#  score_name = "Vision_B_Cell_Signature"
+#)
 
-extended_gene_set_vision <- res_vision$extended_genes
-extended_gene_set_vision
+#extended_gene_set_vision <- res_vision$extended_genes
+#extended_gene_set_vision
 
 # ground truth vs pred
 
@@ -132,7 +141,7 @@ faceted <- ggplot(
 
 ggsave(
   filename = "plots/04_Vision_FacettedPlot.png",
-  plot = p_vision,
+  plot = faceted,
   width = 10,
   height = 6,
   dpi = 300

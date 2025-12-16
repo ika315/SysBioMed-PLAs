@@ -1,0 +1,7 @@
+During startup - Warning messages:
+1: Setting LC_TIME failed, using "C" 
+2: Setting LC_MONETARY failed, using "C" 
+3: Setting LC_PAPER failed, using "C" 
+4: Setting LC_MEASUREMENT failed, using "C" 
+/var/spool/slurmd/job5239966/slurm_script: line 19: 3474363 Killed                  Rscript src/Vision.R
+slurmstepd: error: Detected 1 oom_kill event in StepId=5239966.batch. Some of the step tasks have been OOM Killed.

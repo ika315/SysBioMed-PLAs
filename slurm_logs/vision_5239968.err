@@ -1,0 +1,73 @@
+During startup - Warning messages:
+1: Setting LC_TIME failed, using "C" 
+2: Setting LC_MONETARY failed, using "C" 
+3: Setting LC_PAPER failed, using "C" 
+4: Setting LC_MEASUREMENT failed, using "C" 
+Loading required package: SeuratObject
+Loading required package: sp
+
+Attaching package: ‘SeuratObject’
+
+The following objects are masked from ‘package:base’:
+
+    intersect, t
+
+Warning: The following arguments are not used: reductions, images
+Warning: Different features in new layer data than already exists for scale.data
+Warning: The default method for RunUMAP has changed from calling Python UMAP via reticulate to the R-native UWOT using the cosine metric
+To use Python UMAP via reticulate, set umap.method to 'umap-learn' and metric to 'correlation'
+This message will be shown once per session
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+Importing counts from obj[["RNA_vision"]]@counts ...
+Normalizing to counts per 10,000...
+Importing Meta Data from obj@meta.data ...
+Importing latent space from Embeddings(obj, "pca") using first 50 components
+
+Using 16633/21343 genes detected in 0.10% of cells for signature analysis.
+See the `sig_gene_threshold` input to change this behavior.
+
+Dropping 'celltype.l2' from meta data as it is of type 'character' and has more than 20 unique values.  If you want to include this meta data variable, convert it to a factor before providing the data frame to Vision
+Dropping 'celltype.l3' from meta data as it is of type 'character' and has more than 20 unique values.  If you want to include this meta data variable, convert it to a factor before providing the data frame to Vision
+Over 100000 input cells detected.  Enabling micropooling with max 10 cells per pool.
+Adding Visualization: Seurat_pca
+Adding Visualization: Seurat_umap
+Beginning Analysis
+
+Performing micro-pooling on 154539 cells with a target pool size of 10
+    Using supplied latent space with 50 components
+    Performing initial coarse-clustering...
+    Further partitioning coarse clusters...
+    Micro-pooling completed reducing 154539 cells into 15453 pools
+    Aggregating data using assigned pools...completed
+
+Clustering cells...
+Using latent space to cluster cells...
+completed
+
+Projecting data into 2 dimensions...
+  Running method 1/1: tSNE30 ...
+
+Evaluating signature scores on cells...
+
+'as(<matrix>, "dgeMatrix")' is deprecated.
+Use 'as(as(as(., "dMatrix"), "generalMatrix"), "unpackedMatrix")' instead.
+See help("Deprecated") and help("Matrix-deprecated").
+Evaluating signature-gene importance...
+
+Creating 1 background signature groups with the following parameters:
+  signatures per group: 3000
+Computing KNN Cell Graph in the Latent Space...
+
+Evaluating local consistency of signatures in latent space...
+
+slurmstepd: error: *** JOB 5239968 ON compms-cpu-1.exbio.wzw.tum.de CANCELLED AT 2025-12-16T22:02:20 ***
