@@ -38,13 +38,14 @@ pbmc$AUCell_Raw <- as.numeric(AUCell::getAUC(cells_AUC)[1, ])
 
 # UMAP
 png(filename = "plots/AUCell_Bmemory_UMAP_l1.png", width = 900, height = 700)
-p_umap <- FeaturePlot(pbmc, features = "AUCell_Raw", reduction = "umap", label = TRUE, raster = TRUE) + 
-    scale_colour_viridis_c(option = "magma") + # "magma" sieht toll aus (Dunkelblau zu Gelb)
+p_umap <- FeaturePlot(pbmc, features = "AUCell_Raw", reduction = "umap", label = TRUE, label.size = 6, repel = TRUE, raster = TRUE) + 
+    scale_colour_viridis_c(option = "magma") +
     labs(title = "AUCell Score (Memory B) auf UMAP", 
-         subtitle = "Farbskala: Gelb = Hoch, Dunkelblau = Niedrig | Labels: celltype.l1")
+         subtitle = "Farbskala: Gelb = Hoch, Dunkelblau = Niedrig | Legende zeigt l1-Klassen",
+	 color = "AUCell Score") + 
+    theme(legend.position = "right")	
 print(p_umap)
 dev.off()
-
 
 # Violin Plot
 png(filename = "plots/AUCell_Bmemory_Violin_l1.png", width = 1000, height = 600)
@@ -71,9 +72,9 @@ png(filename = "plots/AUCell_Bmemory_ZScore_Distribution.png", width = 1500, hei
 p_z <- ggplot(pbmc@meta.data, aes(x = .data[[gt_col_name]], y = AUCell_ZScore, fill = .data[[gt_col_name]])) +
     geom_violin(alpha = 0.7) +
     geom_boxplot(width = 0.1, outlier.shape = NA) +
-    geom_hline(yintercept = 2, linetype = "dashed", color = "red", linewidth = 1) +
+    geom_hline(yintercept = 1.5, linetype = "dashed", color = "red", linewidth = 1) +
     labs(title = "AUCell Z-Score Verteilung über alle Zelltypen",
-         subtitle = paste("Roter Strich = Aktueller Threshold (Z = 2)"),
+         subtitle = paste("Roter Strich = Aktueller Threshold (Z = 1.5)"),
          x = "Zelltyp (Ground Truth)",
          y = "AUCell Z-Score") +
     theme_minimal() +
@@ -86,7 +87,7 @@ dev.off()
 # --- FEHLERANALYSE (TP/FP/FN/TN) ---
 
 # Hier Definition Threshold
-THRESHOLD_Z <- 2.0 
+THRESHOLD_Z <- 1.5 
 
 pbmc$Prediction <- ifelse(pbmc$AUCell_ZScore > THRESHOLD_Z, "Positive", "Negative")
 pbmc$GT_Class <- ifelse(pbmc$GT_Response == 1, "Positive", "Negative")
