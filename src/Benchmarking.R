@@ -67,6 +67,28 @@ roc_obj <- pROC::roc(response = pbmc$GT_Response,
 
 print(paste("AUCell ROC-AUC:", round(pROC::auc(roc_obj), 4)))
 
+# Precision + Recall extrahieren und plotten
+pr_coords <- coords(roc_obj, "all", ret = c("precision", "recall"), transpose = FALSE)
+
+pr_coords <- pr_coords[complete.cases(pr_coords), ]
+png(filename = "plots/AUCell_Bmemory_PrecisionRecall_Curve.png", width = 800, height = 700)
+
+p_pr <- ggplot(pr_coords, aes(x = recall, y = precision)) +
+    geom_line(color = "#E41A1C", linewidth = 1.2) +
+    geom_hline(yintercept = sum(pbmc$GT_Response == 1) / nrow(pbmc@meta.data), 
+               linetype = "dashed", color = "grey") + 
+    annotate("text", x = 0.5, y = 0.05, label = "Baseline", color = "grey") +
+    labs(title = "Precision-Recall Kurve (B-Memory)",
+         subtitle = paste("AUC-ROC:", round(pROC::auc(roc_obj), 4)),
+         x = "Recall",
+         y = "Precision") +
+    ylim(0, 1) + xlim(0, 1) +
+    theme_minimal()
+
+print(p_pr)
+dev.off()
+
+
 png(filename = "plots/AUCell_Bmemory_ZScore_Distribution.png", width = 1500, height = 800)
 
 p_z <- ggplot(pbmc@meta.data, aes(x = .data[[gt_col_name]], y = AUCell_ZScore, fill = .data[[gt_col_name]])) +
@@ -141,7 +163,7 @@ dev.off()
 # Error Type Plot (TP, FP, FN, TN)
 pbmc$Error_Type <- paste0(ifelse(pbmc$Prediction == "Positive", "P", "N"), 
                           ifelse(pbmc$GT_Class == "Positive", "T", "F"))
-# Korrektur der Benennung für Klarheit:
+
 pbmc$Error_Type <- case_when(
     pbmc$Prediction == "Positive" & pbmc$GT_Class == "Positive" ~ "TP",
     pbmc$Prediction == "Positive" & pbmc$GT_Class == "Negative" ~ "FP",
