@@ -69,7 +69,8 @@ DefaultAssay(pbmc) <- "RNA_v3"
 vision_obj <- Vision(
   pbmc,
   assay = "RNA_v3",
-  signatures = list(sig_vision)
+  signatures = list(sig_vision),
+  pool = FALSE
 )
 
 # 4) run vision analysis (autocorrelation, AUC scoring, KNN smoothing)

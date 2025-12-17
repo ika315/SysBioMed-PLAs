@@ -74,7 +74,8 @@ vision_expr <- t(t(counts) / n_umi) * median(n_umi)
 vision_obj <- Vision(
   data = counts,
   signatures = list(sig_vision),
-  meta = pbmc@meta.data
+  meta = pbmc@meta.data,
+  pool = FALSE
 )
 
 # 4) run vision analysis (autocorrelation, AUC scoring, KNN smoothing)
