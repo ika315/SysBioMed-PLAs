@@ -36,6 +36,24 @@ cells_AUC <- AUCell::AUCell_calcAUC(gene_set, cells_rankings)
 
 pbmc$AUCell_Raw <- as.numeric(AUCell::getAUC(cells_AUC)[1, ])
 
+# UMAP
+png(filename = "plots/AUCell_Bmemory_UMAP_l1.png", width = 900, height = 700)
+p_umap <- FeaturePlot(pbmc, features = "AUCell_Raw", reduction = "umap", label = TRUE, raster = TRUE) + 
+    scale_colour_viridis_c(option = "magma") + # "magma" sieht toll aus (Dunkelblau zu Gelb)
+    labs(title = "AUCell Score (Memory B) auf UMAP", 
+         subtitle = "Farbskala: Gelb = Hoch, Dunkelblau = Niedrig | Labels: celltype.l1")
+print(p_umap)
+dev.off()
+
+
+# Violin Plot
+png(filename = "plots/AUCell_Bmemory_Violin_l1.png", width = 1000, height = 600)
+p_l1 <- VlnPlot(pbmc, features = "AUCell_Raw", group.by = "celltype.l1", pt.size = 0) +
+    labs(title = "AUCell Score Verteilung über Haupt-Zelllinien (l1)") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+print(p_l1)
+dev.off()
+
 # Z-Score berechnen
 print("Berechne Z-Score für AUCell...")
 pbmc$AUCell_ZScore <- as.vector(scale(pbmc$AUCell_Raw))
@@ -47,6 +65,23 @@ roc_obj <- pROC::roc(response = pbmc$GT_Response,
                      direction = "<")
 
 print(paste("AUCell ROC-AUC:", round(pROC::auc(roc_obj), 4)))
+
+png(filename = "plots/AUCell_Bmemory_ZScore_Distribution.png", width = 1500, height = 800)
+
+p_z <- ggplot(pbmc@meta.data, aes(x = .data[[gt_col_name]], y = AUCell_ZScore, fill = .data[[gt_col_name]])) +
+    geom_violin(alpha = 0.7) +
+    geom_boxplot(width = 0.1, outlier.shape = NA) +
+    geom_hline(yintercept = 2, linetype = "dashed", color = "red", linewidth = 1) +
+    labs(title = "AUCell Z-Score Verteilung über alle Zelltypen",
+         subtitle = paste("Roter Strich = Aktueller Threshold (Z = 2)"),
+         x = "Zelltyp (Ground Truth)",
+         y = "AUCell Z-Score") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1),
+          legend.position = "none")                          
+
+print(p_z)
+dev.off()
 
 # --- FEHLERANALYSE (TP/FP/FN/TN) ---
 
@@ -77,17 +112,28 @@ print(paste("Accuracy:", round(Accuracy, 4)))
 
 # --- Visualisierung ---
 
-# Violin Plot: Z-Score Verteilung B-Memory vs. Rest
-png(filename = paste0("plots/04_Bench_Violin_Bmemory_ZScore.png"), width = 800, height = 600)
-p_violin <- ggplot(pbmc@meta.data, aes(x = GT_Class, y = AUCell_ZScore, fill = GT_Class)) +
-    geom_violin(alpha = 0.5) +
+# Violin Plot: Z-Score Verteilung B-Memory vs.B-general vs. Rest
+
+pbmc$ZScore_Groups <- case_when(
+    pbmc$celltype.l2 == "B memory" ~ "B memory",
+    pbmc$celltype.l1 == "B" & pbmc$celltype.l2 != "B memory" ~ "Rest B-cells",
+    TRUE ~ "Other (Non-B)"
+)
+
+pbmc$ZScore_Groups <- factor(pbmc$ZScore_Groups, 
+                             levels = c("B memory", "Rest B-cells", "Other (Non-B)"))
+
+png(filename = "plots/AUCell_Bmemory_ZScore_3Groups.png", width = 800, height = 600)
+p_z3 <- ggplot(pbmc@meta.data, aes(x = ZScore_Groups, y = AUCell_ZScore, fill = ZScore_Groups)) +
+    geom_violin(alpha = 0.7) +
     geom_boxplot(width = 0.1, outlier.shape = NA) +
-    geom_hline(yintercept = THRESHOLD_Z, linetype = "dashed", color = "red") +
-    labs(title = "AUCell Z-Score: B memory vs. Alle anderen",
-         x = "Ist die Zelle eine B memory? (Ground Truth)",
-         y = "AUCell Z-Score") +
+    geom_hline(yintercept = THRESHOLD_Z, linetype = "dashed", color = "red", linewidth = 1) +
+    scale_fill_manual(values = c("B memory" = "#FF4B4B", "Rest B-cells" = "#4B8BFF", "Other (Non-B)" = "#BEBEBE")) +
+    labs(title = "Spezifitäts-Check: AUCell Z-Score",
+         subtitle = paste("Rote Linie = Threshold Z =", THRESHOLD_Z),
+         x = "Zellgruppen", y = "AUCell Z-Score") +
     theme_minimal()
-print(p_violin)
+print(p_z3)
 dev.off()
 
 
