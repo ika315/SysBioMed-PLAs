@@ -61,6 +61,8 @@ print(pbmc)
 #pbmc[["RNA_vision"]] <- CreateAssayObject(counts = counts_mat)
 #DefaultAssay(pbmc) <- "RNA_vision"
 
+pbmc$celltype.l2 <- factor(pbmc$celltype.l2)
+
 # 1) Counts aus Seurat v5
 counts <- GetAssayData(pbmc, layer = "counts")
 
