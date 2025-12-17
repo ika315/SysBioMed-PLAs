@@ -30,13 +30,13 @@ pbmc <- DietSeurat(
 )
 
 # Preprocessing
-pbmc <- NormalizeData(pbmc, verbose = FALSE)
-pbmc <- FindVariableFeatures(pbmc, verbose = FALSE)
-pbmc <- ScaleData(pbmc, verbose = FALSE) 
-pbmc <- RunPCA(pbmc, features = VariableFeatures(object = pbmc), verbose = FALSE)
+#pbmc <- NormalizeData(pbmc, verbose = FALSE)
+#pbmc <- FindVariableFeatures(pbmc, verbose = FALSE)
+#pbmc <- ScaleData(pbmc, verbose = FALSE) 
+#pbmc <- RunPCA(pbmc, features = VariableFeatures(object = pbmc), verbose = FALSE)
 #pbmc <- RunUMAP(pbmc, dims = 1:10, verbose = FALSE)
-pbmc <- FindNeighbors(pbmc, dims = 1:10, verbose = FALSE)
-pbmc <- RunUMAP(pbmc, dims = 1:10, verbose = FALSE)
+#pbmc <- FindNeighbors(pbmc, dims = 1:10, verbose = FALSE)
+#pbmc <- RunUMAP(pbmc, dims = 1:10, verbose = FALSE)
 #pbmc <- FindClusters(pbmc, resolution = 0.8)
 
 # Signatur Definition (anpassen)
@@ -69,7 +69,7 @@ n_umi <- colSums(counts)
 vision_expr <- t(t(counts) / n_umi) * median(n_umi)
 
 # 3) Vision-Objekt
-vision.obj <- Vision(
+vision_obj <- Vision(
   data = counts,
   signatures = list(sig_vision),
   meta = pbmc@meta.data
@@ -147,7 +147,7 @@ faceted <- ggplot(
 # ----------------------------------------------------
 
 ggsave(
-  filename = "plots/04_Vision_FacettedPlot.png",
+  filename = "plots/test/04_Vision_FacettedPlot.png",
   plot = faceted,
   width = 10,
   height = 6,
