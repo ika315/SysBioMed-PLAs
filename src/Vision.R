@@ -7,6 +7,7 @@
 library(VISION)
 library(Seurat)
 library(ggplot2)
+library(SeuratObject)
 
 ds_name <- "seu_sx_final"
 path = "~/SysBioMed-PLAs/data/seu_sx_final.rds"
@@ -56,19 +57,25 @@ print(pbmc)
 # ----------------------------------------------------
 
 # convert seurat → vision object
-counts_mat <- GetAssayData(pbmc, assay = "RNA", layer = "counts")
-pbmc[["RNA_vision"]] <- CreateAssayObject(counts = counts_mat)
-DefaultAssay(pbmc) <- "RNA_vision"
+#counts_mat <- GetAssayData(pbmc, assay = "RNA", layer = "counts")
+#pbmc[["RNA_vision"]] <- CreateAssayObject(counts = counts_mat)
+#DefaultAssay(pbmc) <- "RNA_vision"
 
-vision_obj <- Vision(
-  pbmc,
-  assay = "RNA_vision",
-  dimRed = NULL,
-  dimRedComponents = NULL,
-  signatures = list(sig_vision)
+# 1) Counts aus Seurat v5
+counts <- GetAssayData(pbmc, layer = "counts")
+
+# 2) Lineare Library-Size-Normalisierung (laut tutorial)
+n_umi <- colSums(counts)
+vision_expr <- t(t(counts) / n_umi) * median(n_umi)
+
+# 3) Vision-Objekt
+vision.obj <- Vision(
+  data = counts,
+  signatures = list(sig_vision),
+  meta = pbmc@meta.data
 )
 
-# run vision analysis (autocorrelation, AUC scoring, KNN smoothing)
+# 4) run vision analysis (autocorrelation, AUC scoring, KNN smoothing)
 vision_obj <- analyze(vision_obj)
 
 # view results

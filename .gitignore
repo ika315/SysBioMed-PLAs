@@ -1,2 +1,7 @@
-.Rproj
-.Rproj.user
+# RStudio
+*.Rproj
+.Rproj.user/
+
+# Data / objects
+*.rds
+.gmt_lists/
