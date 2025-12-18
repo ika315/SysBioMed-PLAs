@@ -162,3 +162,49 @@ VlnPlot(pbmc, features = score_name,
         group.by = "seurat_clusters",
         pt.size = 0.5, ncol = 1)
 dev.off()
+
+tryCatch({
+  
+  # Z-Score
+  print("Führe Z-Score Normalisierung durch...")
+  
+  scores <- pbmc@meta.data[[score_name]]
+  
+  mean_score <- mean(scores, na.rm = TRUE)
+  sd_score   <- sd(scores, na.rm = TRUE)
+  
+  pbmc$Vision_ZScore <- (scores - mean_score) / sd_score
+  score_plot_name <- "Vision_ZScore"
+  
+  # UMAP Plot 
+  plot_filename_umap <- paste0(
+    base_dir, "/plots/seurat_downgrade/04_Vision_UMAP_",
+    ds_name, "_ZScore.png"
+  )
+  
+  png(filename = plot_filename_umap, width = 1000, height = 800)
+  print(FeaturePlot(pbmc, features = score_plot_name, reduction = "umap", pt.size = 0.5))
+  dev.off()
+  
+  print(paste("UMAP Z-Score Plot gespeichert:", plot_filename_umap))
+  
+  # Violin Plot
+  plot_filename_vln <- paste0(
+    base_dir, "/plots/seurat_downgrade/04_Vision_UMAP_byClusters_",
+    ds_name, "_ZScore.png"
+  )
+  
+  png(filename = plot_filename_vln, width = 800, height = 600)
+  print(VlnPlot(pbmc, features = score_plot_name,
+                group.by = "seurat_clusters",
+                pt.size = 0.1, ncol = 1))
+  dev.off()
+  
+  print(paste("Violin Z-Score Plot gespeichert:", plot_filename_vln))
+  
+}, error = function(e) {
+  
+  print("Z-Score / plotting block failed, continuing pipeline.")
+  print(e$message)
+  
+})
