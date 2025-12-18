@@ -160,14 +160,24 @@ ggsave(
 #pbmc <- RunUMAP(pbmc, dims = 1:10) 
 plot_filename <- paste0(base_dir, "/plots/seurat_downgrade/04_Vision_UMAP_", ds_name, "_RAW_Score.png")
 png(filename = plot_filename, width = 800, height = 700)
-FeaturePlot(pbmc, features = score_name, reduction = "umap") 
+p_umap <- FeaturePlot(pbmc, features = "Vision_B_Cell_Signature", reduction = "umap", label = TRUE, label.size = 6, repel = TRUE, raster = TRUE) + 
+  scale_colour_viridis_c(option = "magma") +
+  labs(title = "Vision Score auf UMAP", 
+       subtitle = "Farbskala: Gelb = Hoch, Dunkelblau = Niedrig",
+       color = "Vision Score") + 
+  theme(legend.position = "right")	
+print(p_umap)
 dev.off()
 
 # b) Per-Cluster Verteilung
-plot_filename <- paste0(base_dir, "/plots/seurat_downgrade/04_Vision_UMAP_byClusters_", ds_name, "_RAW_Score.png")
+plot_filename <- paste0(base_dir, "/plots/seurat_downgrade/04_Vision_VlnPlot_byClusters_", ds_name, "_RAW_Score.png")
 png(filename = plot_filename, width = 800, height = 600)
-VlnPlot(pbmc, features = score_name, group.by = "seurat_clusters", pt.size = 0.5, ncol = 1)
+p_l1 <- VlnPlot(pbmc, features = score_name, group.by = "seurat_clusters", pt.size = 0, ncol = 1) +
+    labs(title = "Vision Score Verteilung über Cluster") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+print(p_l1)
 dev.off()
+
 
 # Z-Score
 print("Führe Z-Score Normalisierung durch...")
@@ -183,14 +193,21 @@ score_plot_name <- "Vision_ZScore"
 # UMAP Plot 
 plot_filename_umap <- paste0(base_dir, "/plots/seurat_downgrade/04_Vision_UMAP_", ds_name, "_ZScore.png")
 png(filename = plot_filename_umap, width = 1000, height = 800) 
-print(FeaturePlot(pbmc, features = score_plot_name, reduction = "umap", pt.size = 0.5))
+print(FeaturePlot(pbmc, features = score_plot_name, reduction = "umap", label = TRUE, label.size = 6, repel = TRUE, raster = TRUE) + 
+        scale_colour_viridis_c(option = "magma") +
+        labs(title = "Vision Z Score auf UMAP", 
+             subtitle = "Farbskala: Gelb = Hoch, Dunkelblau = Niedrig",
+             color = "Vision Score") + 
+        theme(legend.position = "right"))
 dev.off()
 print(paste("UMAP Z-Score Plot gespeichert:", plot_filename_umap))
 
 
 # Violin Plot
-plot_filename_vln <- paste0(base_dir, "/plots/seurat_downgrade/04_Vision_UMAP_byClusters_", ds_name, "_ZScore.png")
+plot_filename_vln <- paste0(base_dir, "/plots/seurat_downgrade/04_Vision_VlnPlot_byClusters_", ds_name, "_ZScore.png")
 png(filename = plot_filename_vln, width = 800, height = 600) 
-print(VlnPlot(pbmc, features = score_plot_name, group.by = "seurat_clusters", pt.size = 0.1, ncol = 1))
+print(VlnPlot(pbmc, features = score_plot_name, group.by = "seurat_clusters", pt.size = 0, ncol = 1) +
+        labs(title = "Vision Z Score Verteilung über Cluster") +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1)))
 dev.off()
 print(paste("Violin Z-Score Plot gespeichert:", plot_filename_vln))

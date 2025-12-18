@@ -104,21 +104,15 @@ score_name <- "Vision_B_Cell_Signature"
 #extended_gene_set_vision
 
 # ground truth vs pred
-
-# change seurat_annotations to celltype.l2
-
 # ground truth
 pbmc$true_naive_b <- pbmc$celltype.l2 == "Naive B"
-#pbmc$true_naive_b <- pbmc$seurat_annotations == "B"
+#pbmc$true_naive_b <- pbmc$seurat_annotations == "B" # for small dataset
 
 # predicted from score
 # logic:
-# look only at true B cells
-# compute the median of their Vision signature score
-# use this as a decision threshold
+# look only at true B cells, compute the median of their Vision signature score, use this as a decision threshold
 threshold <- median(pbmc$Vision_B_Cell_Signature[pbmc$true_naive_b])
 pbmc$pred_naive_b <- pbmc$Vision_B_Cell_Signature >= threshold # this is saying: “a cell must score at least as high as a typical true (naive) B cell”
-
 
 # confusion classes
 pbmc$confusion <- with(pbmc@meta.data,
@@ -129,7 +123,6 @@ pbmc$confusion <- with(pbmc@meta.data,
 )
 
 table(pbmc$confusion)
-
 
 faceted <- ggplot(
   pbmc@meta.data,
@@ -156,21 +149,30 @@ ggsave(
   height = 6,
   dpi = 300
 )
-# UMAP colored by Vision score
-png(filename = "plots/counts_matrix/04_Vision_UMAP.png", width = 800, height = 700)
-FeaturePlot(pbmc, features = score_name, reduction = "umap")
+# a) UMAP des Scores
+#pbmc <- RunUMAP(pbmc, dims = 1:10) 
+plot_filename <- paste0(base_dir, "/plots/seurat_downgrade/04_Vision_UMAP_", ds_name, "_RAW_Score.png")
+png(filename = plot_filename, width = 800, height = 700)
+p_umap <- FeaturePlot(pbmc, features = "Vision_B_Cell_Signature", reduction = "umap", label = TRUE, label.size = 6, repel = TRUE, raster = TRUE) + 
+  scale_colour_viridis_c(option = "magma") +
+  labs(title = "Vision Score auf UMAP", 
+       subtitle = "Farbskala: Gelb = Hoch, Dunkelblau = Niedrig",
+       color = "Vision Score") + 
+  theme(legend.position = "right")	
+print(p_umap)
 dev.off()
 
-# Violin plot by cluster
-png(filename = "plots/counts_matrix/04_Vision_VlnPlot.png", width = 800, height = 600)
-VlnPlot(pbmc, features = score_name,
-        group.by = "seurat_clusters",
-        pt.size = 0.5, ncol = 1)
+# b) Per-Cluster Verteilung
+plot_filename <- paste0(base_dir, "/plots/seurat_downgrade/04_Vision_VlnPlot_byClusters_", ds_name, "_RAW_Score.png")
+png(filename = plot_filename, width = 800, height = 600)
+p_l1 <- VlnPlot(pbmc, features = score_name, group.by = "seurat_clusters", pt.size = 0, ncol = 1) +
+  labs(title = "Vision Score Verteilung über Cluster") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+print(p_l1)
 dev.off()
 
 tryCatch({
   
-  # Z-Score
   print("Führe Z-Score Normalisierung durch...")
   
   scores <- pbmc@meta.data[[score_name]]
@@ -182,23 +184,25 @@ tryCatch({
   score_plot_name <- "Vision_ZScore"
   
   # UMAP Plot 
-  plot_filename_umap <- paste0("/plots/counts_matrix/04_Vision_UMAP_", ds_name, "_ZScore.png")
-  
-  png(filename = plot_filename_umap, width = 1000, height = 800)
-  print(FeaturePlot(pbmc, features = score_plot_name, reduction = "umap", pt.size = 0.5))
+  plot_filename_umap <- paste0(base_dir, "/plots/seurat_downgrade/04_Vision_UMAP_", ds_name, "_ZScore.png")
+  png(filename = plot_filename_umap, width = 1000, height = 800) 
+  print(FeaturePlot(pbmc, features = score_plot_name, reduction = "umap", label = TRUE, label.size = 6, repel = TRUE, raster = TRUE) + 
+          scale_colour_viridis_c(option = "magma") +
+          labs(title = "Vision Z Score auf UMAP", 
+               subtitle = "Farbskala: Gelb = Hoch, Dunkelblau = Niedrig",
+               color = "Vision Score") + 
+          theme(legend.position = "right"))
   dev.off()
-  
   print(paste("UMAP Z-Score Plot gespeichert:", plot_filename_umap))
   
+  
   # Violin Plot
-  plot_filename_vln <- paste0("/plots/counts_matrix/04_Vision_UMAP_byClusters_", ds_name, "_ZScore.png")
-  
-  png(filename = plot_filename_vln, width = 800, height = 600)
-  print(VlnPlot(pbmc, features = score_plot_name,
-                group.by = "seurat_clusters",
-                pt.size = 0.1, ncol = 1))
+  plot_filename_vln <- paste0(base_dir, "/plots/seurat_downgrade/04_Vision_VlnPlot_byClusters_", ds_name, "_ZScore.png")
+  png(filename = plot_filename_vln, width = 800, height = 600) 
+  print(VlnPlot(pbmc, features = score_plot_name, group.by = "seurat_clusters", pt.size = 0, ncol = 1) +
+          labs(title = "Vision Z Score Verteilung über Cluster") +
+          theme(axis.text.x = element_text(angle = 45, hjust = 1)))
   dev.off()
-  
   print(paste("Violin Z-Score Plot gespeichert:", plot_filename_vln))
   
 }, error = function(e) {
