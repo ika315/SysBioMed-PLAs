@@ -71,9 +71,12 @@ pbmc$Error_Type <- case_when(
 
 # --- UMAP: AUCell Raw Scores ---
 png(filename = "plots/AUCell_Bmemory_UMAP_Raw.png", width = 900, height = 700)
-FeaturePlot(pbmc, features = "AUCell_Raw", reduction = "umap", label = TRUE, repel = TRUE, raster = TRUE) +
+
+p_umap_raw <- FeaturePlot(pbmc, features = "AUCell_Raw", reduction = "umap", 
+                         label = TRUE, repel = TRUE, raster = TRUE) +
     scale_colour_viridis_c(option = "magma") +
-    labs(title = "AUCell Score (Memory B) auf UMAP", color = "Score")
+    labs(title = "AUCell Score (Memory B) auf UMAP", color = "AUCell-Score") +
+    theme_minimal()
 dev.off()
 
 # --- Violin: AUCell Raw Scores ---
@@ -90,6 +93,39 @@ DimPlot(pbmc, group.by = "Error_Type", reduction = "umap", raster = TRUE) +
     scale_color_manual(values = c("TP"="#228B22", "FP"="#FF4500", "FN"="#1E90FF", "TN"="#D3D3D3")) +
     labs(title = "Mapping der Fehlerklassen auf UMAP", subtitle = paste("Threshold Z =", THRESHOLD_Z))
 dev.off()
+
+# --- Error Class Density Distribution ---
+print("--- Erstelle Density Plots nach Fehlerklassen ---")
+pbmc$Error_Type <- factor(pbmc$Error_Type, levels = c("TP", "FP", "FN", "TN"))
+
+p_faceted_z <- ggplot(pbmc@meta.data, aes(x = AUCell_ZScore)) +
+  geom_density(fill = "steelblue", alpha = 0.6) +
+  facet_wrap(~ Error_Type, scales = "free_y") +
+  geom_vline(xintercept = THRESHOLD_Z, linetype = "dashed", color = "red") +
+  theme_classic() +
+  labs(
+    title = "AUCell Z-Score Verteilung nach Fehlerklassen",
+    subtitle = paste("Rote Linie = Threshold Z =", THRESHOLD_Z),
+    x = "AUCell Z-Score",
+    y = "Dichte (Density)"
+  )
+
+ggsave(filename = "plots/AUCell_ZScore_Facetted_Errors.png", 
+       plot = p_faceted_z, width = 10, height = 6)
+
+p_faceted_raw <- ggplot(pbmc@meta.data, aes(x = AUCell_Raw)) +
+  geom_density(fill = "orange", alpha = 0.6) +
+  facet_wrap(~ Error_Type, scales = "free_y") +
+  theme_classic() +
+  labs(
+    title = "AUCell Raw Score Verteilung nach Fehlerklassen",
+    subtitle = "Einteilung basierend auf Z-Score Threshold",
+    x = "AUCell Raw Score",
+    y = "Dichte (Density)"
+  )
+
+ggsave(filename = "plots/AUCell_Raw_Facetted_Errors.png", 
+       plot = p_faceted_raw, width = 10, height = 6)
 
 # --- ROC Kurve ---
 print("--- Erstelle ROC Plot ---")
@@ -130,3 +166,18 @@ ggplot(pbmc@meta.data, aes(x = ZScore_Groups, y = AUCell_ZScore, fill = ZScore_G
 dev.off()
 
 
+# --- Violin: Z-Score Verteilung über detaillierten Zelltypen ---
+png(filename = "plots/AUCell_Bmemory_ZScore_Distribution.png", width = 1500, height = 800)
+p_z <- ggplot(pbmc@meta.data, aes(x = .data[[gt_col_name]], y = AUCell_ZScore, fill = .data[[gt_col_name]])) +
+    geom_violin(alpha = 0.7) +
+    geom_boxplot(width = 0.1, outlier.shape = NA) +
+    geom_hline(yintercept = THRESHOLD_Z, linetype = "dashed", color = "red", linewidth = 1) +
+    labs(title = "AUCell Z-Score Verteilung über alle Zelltypen",
+         subtitle = paste("Roter Strich = Aktueller Threshold (Z =", THRESHOLD_Z, ")"),
+         x = "Zelltyp (Ground Truth)",
+         y = "AUCell Z-Score") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1),
+          legend.position = "none") # Legende hier aus, da X-Achse beschriftet ist
+print(p_z)
+dev.off()
