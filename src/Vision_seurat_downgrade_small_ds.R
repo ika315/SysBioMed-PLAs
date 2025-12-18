@@ -9,39 +9,26 @@ library(Seurat)
 library(ggplot2)
 library(SeuratObject)
 
-ds_name <- "seu_sx_final"
-path = "~/SysBioMed-PLAs/data/seu_sx_final.rds"
+data("pbmc3k.final")
+pbmc <- pbmc3k.final 
 
-if (!file.exists(path)) {
-    stop(paste("Fehler: Datensatz nicht gefunden unter", path))
-}
-
-print(paste("Lade prozessiertes Seurat-Objekt:", path))
-pbmc <- readRDS(path)
+ds_name <- "pbmc3k.final"
 
 DefaultAssay(pbmc) <- "RNA"
-pbmc <- DietSeurat(
-  pbmc,
-  assays = "RNA",
-  reductions = c("pca", "umap"),
-  graphs = c("RNA_nn", "RNA_snn"),
-  misc = FALSE,
-  images = FALSE
-)
+pbmc <- DietSeurat(pbmc, assays = "RNA", misc = FALSE, images = FALSE) 
 
 # Preprocessing
-#pbmc <- NormalizeData(pbmc, verbose = FALSE)
-#pbmc <- FindVariableFeatures(pbmc, verbose = FALSE)
-#pbmc <- ScaleData(pbmc, verbose = FALSE) 
-#pbmc <- RunPCA(pbmc, features = VariableFeatures(object = pbmc), verbose = FALSE)
-#pbmc <- RunUMAP(pbmc, dims = 1:10, verbose = FALSE)
-#pbmc <- FindNeighbors(pbmc, dims = 1:10, verbose = FALSE)
-#pbmc <- RunUMAP(pbmc, dims = 1:10, verbose = FALSE)
-#pbmc <- FindClusters(pbmc, resolution = 0.8)
+pbmc <- NormalizeData(pbmc)
+pbmc <- FindVariableFeatures(pbmc)
+pbmc <- ScaleData(pbmc) 
+pbmc <- RunPCA(pbmc, features = VariableFeatures(object = pbmc))
+pbmc <- RunUMAP(pbmc, dims = 1:10)
+pbmc <- FindNeighbors(pbmc, dims = 1:10)
+pbmc <- FindClusters(pbmc, resolution = 0.8)
 
 # Signatur Definition (anpassen)
 # T.cell.signatures <- list(
-  # T_Aktiv_Sig = c("CD3E", "CD8A", "IFNG", "IL2RA") 
+# T_Aktiv_Sig = c("CD3E", "CD8A", "IFNG", "IL2RA") 
 # )
 # gene signature 
 # need to put signature genes into different format for vision
@@ -61,20 +48,32 @@ print(pbmc)
 #pbmc[["RNA_vision"]] <- CreateAssayObject(counts = counts_mat)
 #DefaultAssay(pbmc) <- "RNA_vision"
 
-pbmc$celltype.l2 <- factor(pbmc$celltype.l2)
+pbmc$seurat_annotations <- factor(pbmc$seurat_annotations)
 
+# manual
 # 1) Counts aus Seurat v5
-counts <- GetAssayData(pbmc, layer = "counts")
+#counts <- GetAssayData(pbmc, layer = "counts")
 
 # 2) Lineare Library-Size-Normalisierung (laut tutorial)
-n_umi <- colSums(counts)
-vision_expr <- t(t(counts) / n_umi) * median(n_umi)
+#n_umi <- colSums(counts)
+#vision_expr <- t(t(counts) / n_umi) * median(n_umi)
 
 # 3) Vision-Objekt
+#vision_obj <- Vision(
+#  data = counts,
+#  signatures = list(sig_vision),
+#  meta = pbmc@meta.data,
+#  pool = FALSE
+#)
+
+# downgrade
+pbmc[["RNA_v3"]] <- as(pbmc[["RNA"]], "Assay")
+DefaultAssay(pbmc) <- "RNA_v3"
+
 vision_obj <- Vision(
-  data = counts,
+  pbmc,
+  assay = "RNA_v3",
   signatures = list(sig_vision),
-  meta = pbmc@meta.data,
   pool = FALSE
 )
 
@@ -108,8 +107,8 @@ score_name <- "Vision_B_Cell_Signature"
 # change seurat_annotations to celltype.l2
 
 # ground truth
-pbmc$true_naive_b <- pbmc$celltype.l2 == "Naive B"
-#pbmc$true_naive_b <- pbmc$seurat_annotations == "B"
+#pbmc$true_naive_b <- pbmc$celltype.l2 == "Naive B"
+pbmc$true_naive_b <- pbmc$seurat_annotations == "B"
 
 # predicted from score
 # logic:
@@ -150,20 +149,48 @@ faceted <- ggplot(
 # ----------------------------------------------------
 
 ggsave(
-  filename = "plots/counts_matrix/04_Vision_FacettedPlot.png",
+  filename = paste0(base_dir, "/plots/seurat_downgrade/04_Vision_FacettedPlot_", ds_name, "_RAW_Score.png"),
   plot = faceted,
   width = 10,
   height = 6,
   dpi = 300
 )
-# UMAP colored by Vision score
-png(filename = "plots/counts_matrix/04_Vision_UMAP.png", width = 800, height = 700)
-FeaturePlot(pbmc, features = score_name, reduction = "umap")
+
+# a) UMAP des Scores
+#pbmc <- RunUMAP(pbmc, dims = 1:10) 
+plot_filename <- paste0(base_dir, "/plots/seurat_downgrade/04_Vision_UMAP_", ds_name, "_RAW_Score.png")
+png(filename = plot_filename, width = 800, height = 700)
+FeaturePlot(pbmc, features = score_name, reduction = "umap") 
 dev.off()
 
-# Violin plot by cluster
-png(filename = "plots/counts_matrix/04_Vision_VlnPlot.png", width = 800, height = 600)
-VlnPlot(pbmc, features = score_name,
-        group.by = "seurat_clusters",
-        pt.size = 0.5, ncol = 1)
+# b) Per-Cluster Verteilung
+plot_filename <- paste0(base_dir, "/plots/seurat_downgrade/04_Vision_UMAP_byClusters_", ds_name, "_RAW_Score.png")
+png(filename = plot_filename, width = 800, height = 600)
+VlnPlot(pbmc, features = score_name, group.by = "seurat_clusters", pt.size = 0.5, ncol = 1)
 dev.off()
+
+# Z-Score
+print("Führe Z-Score Normalisierung durch...")
+
+scores <- pbmc@meta.data[[score_name]]
+
+mean_score <- mean(scores, na.rm = TRUE)
+sd_score   <- sd(scores, na.rm = TRUE)
+
+pbmc$Vision_ZScore <- (scores - mean_score) / sd_score
+score_plot_name <- "Vision_ZScore"
+
+# UMAP Plot 
+plot_filename_umap <- paste0(base_dir, "/plots/seurat_downgrade/04_Vision_UMAP_", ds_name, "_ZScore.png")
+png(filename = plot_filename_umap, width = 1000, height = 800) 
+print(FeaturePlot(pbmc, features = score_plot_name, reduction = "umap", pt.size = 0.5))
+dev.off()
+print(paste("UMAP Z-Score Plot gespeichert:", plot_filename_umap))
+
+
+# Violin Plot
+plot_filename_vln <- paste0(base_dir, "/plots/seurat_downgrade/04_Vision_UMAP_byClusters_", ds_name, "_ZScore.png")
+png(filename = plot_filename_vln, width = 800, height = 600) 
+print(VlnPlot(pbmc, features = score_plot_name, group.by = "seurat_clusters", pt.size = 0.1, ncol = 1))
+dev.off()
+print(paste("Violin Z-Score Plot gespeichert:", plot_filename_vln))

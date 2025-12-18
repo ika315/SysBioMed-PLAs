@@ -145,19 +145,19 @@ faceted <- ggplot(
 # ----------------------------------------------------
 
 ggsave(
-  filename = "plots/test/04_Vision_FacettedPlot.png",
+  filename = "plots/seurat_downgrade/04_Vision_FacettedPlot.png",
   plot = faceted,
   width = 10,
   height = 6,
   dpi = 300
 )
 # UMAP colored by Vision score
-png(filename = "plots/test/04_Vision_UMAP.png", width = 800, height = 700)
+png(filename = "plots/seurat_downgrade/04_Vision_UMAP.png", width = 800, height = 700)
 FeaturePlot(pbmc, features = score_name, reduction = "umap")
 dev.off()
 
 # Violin plot by cluster
-png(filename = "plots/test/04_Vision_VlnPlot.png", width = 800, height = 600)
+png(filename = "plots/seurat_downgrade/04_Vision_VlnPlot.png", width = 800, height = 600)
 VlnPlot(pbmc, features = score_name,
         group.by = "seurat_clusters",
         pt.size = 0.5, ncol = 1)
