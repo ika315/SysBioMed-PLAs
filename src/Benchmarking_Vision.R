@@ -196,3 +196,84 @@ p_error <- ggplot(pbmc@meta.data, aes(x = Error_Type, y = Vision_ZScore, fill = 
   theme_minimal()
 print(p_error)
 dev.off()
+
+# Error Type Plot (TP, FP, FN, TN)
+pbmc$Error_Type <- paste0(ifelse(pbmc$Prediction == "Positive", "P", "N"), 
+                          ifelse(pbmc$GT_Class == "Positive", "T", "F"))
+
+pbmc$Error_Type <- case_when(
+  pbmc$Prediction == "Positive" & pbmc$GT_Class == "Positive" ~ "TP",
+  pbmc$Prediction == "Positive" & pbmc$GT_Class == "Negative" ~ "FP",
+  pbmc$Prediction == "Negative" & pbmc$GT_Class == "Positive" ~ "FN",
+  pbmc$Prediction == "Negative" & pbmc$GT_Class == "Negative" ~ "TN"
+)
+
+png(filename = paste0("plots/seurat_downgrade/04_Vision_Bench_ErrorTypes_B.png"), width = 900, height = 650)
+p_error <- ggplot(pbmc@meta.data, aes(x = Error_Type, y = Vision_ZScore, fill = Error_Type)) +
+  geom_boxplot() +
+  geom_hline(yintercept = THRESHOLD_Z, linetype = "dashed", color = "red") +
+  labs(title = "Vision Z-Score nach Fehlerklasse (Ziel: B)") +
+  theme_minimal()
+print(p_error)
+dev.off()
+
+# Error Class Distribution
+pbmc$confusion <- with(
+  pbmc@meta.data,
+  ifelse(GT_Response == 1 & Prediction == "Positive", "TP",
+         ifelse(GT_Response == 0 & Prediction == "Positive", "FP",
+                ifelse(GT_Response == 1 & Prediction == "Negative", "FN",
+                       "TN")))
+)
+
+pbmc$confusion <- factor(pbmc$confusion, levels = c("TP", "FP", "FN", "TN"))
+
+table(pbmc$confusion)
+
+faceted_z <- ggplot(
+  pbmc@meta.data,
+  aes(x = Vision_ZScore)
+) +
+  geom_density(fill = "steelblue", alpha = 0.6) +
+  facet_wrap(~ confusion, scales = "free_y") +
+  geom_vline(xintercept = THRESHOLD_Z,
+             linetype = "dashed", color = "red") +
+  theme_classic() +
+  labs(
+    title = "Vision Z-Score distributions by confusion class",
+    subtitle = paste("Threshold Z =", THRESHOLD_Z),
+    x = "Vision Z-Score",
+    y = "Density"
+  )
+
+
+ggsave(
+  filename = "plots/seurat_downgrade/04_Vision_ZScore_Facetted_TP_FP_FN_TN.png",
+  plot = faceted_z,
+  width = 10,
+  height = 6,
+  dpi = 300
+)
+
+faceted_raw <- ggplot(
+  pbmc@meta.data,
+  aes(x = Vision_Raw)
+) +
+  geom_density(fill = "steelblue", alpha = 0.6) +
+  facet_wrap(~ confusion, scales = "free_y") +
+  theme_classic() +
+  labs(
+    title = "Vision raw score distributions by confusion class",
+    subtitle = paste("Confusion defined using Z-score threshold =", THRESHOLD_Z),
+    x = "Vision raw score",
+    y = "Density"
+  )
+
+ggsave(
+  filename = "plots/seurat_downgrade/04_Vision_Raw_Facetted_TP_FP_FN_TN.png",
+  plot = faceted_raw,
+  width = 10,
+  height = 6,
+  dpi = 300
+)
+
