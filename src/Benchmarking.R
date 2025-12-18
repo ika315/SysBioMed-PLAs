@@ -26,8 +26,6 @@ gene_set <- list(Memory_B_Score = memory_b_genes)
 
 pbmc$GT_Response <- ifelse(pbmc[[gt_col_name]] == "B memory", 1, 0)
 
-
-
 # --- AUCELL SCORING ---
 print("--- Berechne AUCell Score ---")
 expression_matrix <- GetAssayData(pbmc, layer = "data")
@@ -36,133 +34,31 @@ cells_AUC <- AUCell::AUCell_calcAUC(gene_set, cells_rankings)
 
 pbmc$AUCell_Raw <- as.numeric(AUCell::getAUC(cells_AUC)[1, ])
 
-# UMAP
-png(filename = "plots/AUCell_Bmemory_UMAP_l1.png", width = 900, height = 700)
-p_umap <- FeaturePlot(pbmc, features = "AUCell_Raw", reduction = "umap", label = TRUE, label.size = 6, repel = TRUE, raster = TRUE) + 
-    scale_colour_viridis_c(option = "magma") +
-    labs(title = "AUCell Score (Memory B) auf UMAP", 
-         subtitle = "Farbskala: Gelb = Hoch, Dunkelblau = Niedrig | Legende zeigt l1-Klassen",
-	 color = "AUCell Score") + 
-    theme(legend.position = "right")	
-print(p_umap)
-dev.off()
-
-# Violin Plot
-png(filename = "plots/AUCell_Bmemory_Violin_l1.png", width = 1000, height = 600)
-p_l1 <- VlnPlot(pbmc, features = "AUCell_Raw", group.by = "celltype.l1", pt.size = 0) +
-    labs(title = "AUCell Score Verteilung über Haupt-Zelllinien (l1)") +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1))
-print(p_l1)
-dev.off()
-
 # Z-Score berechnen
 print("Berechne Z-Score für AUCell...")
 pbmc$AUCell_ZScore <- as.vector(scale(pbmc$AUCell_Raw))
 
-print("--- Führe AUC-ROC Benchmarking durch ---")
-roc_obj <- pROC::roc(response = pbmc$GT_Response,
-                     predictor = pbmc$AUCell_ZScore,
-                     levels = c(0, 1),
-                     direction = "<")
 
-print(paste("AUCell ROC-AUC:", round(pROC::auc(roc_obj), 4)))
-
-# Precision + Recall extrahieren und plotten
-pr_coords <- coords(roc_obj, "all", ret = c("precision", "recall"), transpose = FALSE)
-
-pr_coords <- pr_coords[complete.cases(pr_coords), ]
-png(filename = "plots/AUCell_Bmemory_PrecisionRecall_Curve.png", width = 800, height = 700)
-
-p_pr <- ggplot(pr_coords, aes(x = recall, y = precision)) +
-    geom_line(color = "#E41A1C", linewidth = 1.2) +
-    geom_hline(yintercept = sum(pbmc$GT_Response == 1) / nrow(pbmc@meta.data), 
-               linetype = "dashed", color = "grey") + 
-    annotate("text", x = 0.5, y = 0.05, label = "Baseline", color = "grey") +
-    labs(title = "Precision-Recall Kurve (B-Memory)",
-         subtitle = paste("AUC-ROC:", round(pROC::auc(roc_obj), 4)),
-         x = "Recall",
-         y = "Precision") +
-    ylim(0, 1) + xlim(0, 1) +
-    theme_minimal()
-
-print(p_pr)
-dev.off()
-
-
-png(filename = "plots/AUCell_Bmemory_ZScore_Distribution.png", width = 1500, height = 800)
-
-p_z <- ggplot(pbmc@meta.data, aes(x = .data[[gt_col_name]], y = AUCell_ZScore, fill = .data[[gt_col_name]])) +
-    geom_violin(alpha = 0.7) +
-    geom_boxplot(width = 0.1, outlier.shape = NA) +
-    geom_hline(yintercept = 1.5, linetype = "dashed", color = "red", linewidth = 1) +
-    labs(title = "AUCell Z-Score Verteilung über alle Zelltypen",
-         subtitle = paste("Roter Strich = Aktueller Threshold (Z = 1.5)"),
-         x = "Zelltyp (Ground Truth)",
-         y = "AUCell Z-Score") +
-    theme_minimal() +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1),
-          legend.position = "none")                          
-
-print(p_z)
-dev.off()
-
-# --- FEHLERANALYSE (TP/FP/FN/TN) ---
-
-# Hier Definition Threshold
-THRESHOLD_Z <- 1.5 
-
+THRESHOLD_Z <- 1.5
 pbmc$Prediction <- ifelse(pbmc$AUCell_ZScore > THRESHOLD_Z, "Positive", "Negative")
 pbmc$GT_Class <- ifelse(pbmc$GT_Response == 1, "Positive", "Negative")
 
-# Confusion Matrix
 ConfusionMatrix <- table(Predicted = pbmc$Prediction, Actual = pbmc$GT_Class)
-print("Confusion Matrix (Positive = B memory):")
-print(ConfusionMatrix)
-
-# Metriken extrahieren
 TP <- ConfusionMatrix["Positive", "Positive"]
-FP <- ConfusionMatrix["Positive", "Negative"] 
+FP <- ConfusionMatrix["Positive", "Negative"]
 FN <- ConfusionMatrix["Negative", "Positive"]
 TN <- ConfusionMatrix["Negative", "Negative"]
 
-Precision <- TP / (TP + FP)
-Accuracy <- (TP + TN) / sum(ConfusionMatrix)
+# Metrics
+Precision   <- TP / (TP + FP)
+Recall      <- TP / (TP + FN) 
+Specificity <- TN / (TN + FP)
+Accuracy    <- (TP + TN) / sum(ConfusionMatrix)
+F1_Score    <- 2 * (Precision * Recall) / (Precision + Recall)
 
-print(paste("Metriken für B-Memory (Threshold Z =", THRESHOLD_Z, "):"))
-print(paste("Precision:", round(Precision, 4)))
-print(paste("Accuracy:", round(Accuracy, 4)))
-
-
-# --- Visualisierung ---
-
-# Violin Plot: Z-Score Verteilung B-Memory vs.B-general vs. Rest
-
-pbmc$ZScore_Groups <- case_when(
-    pbmc$celltype.l2 == "B memory" ~ "B memory",
-    pbmc$celltype.l1 == "B" & pbmc$celltype.l2 != "B memory" ~ "Rest B-cells",
-    TRUE ~ "Other (Non-B)"
-)
-
-pbmc$ZScore_Groups <- factor(pbmc$ZScore_Groups, 
-                             levels = c("B memory", "Rest B-cells", "Other (Non-B)"))
-
-png(filename = "plots/AUCell_Bmemory_ZScore_3Groups.png", width = 800, height = 600)
-p_z3 <- ggplot(pbmc@meta.data, aes(x = ZScore_Groups, y = AUCell_ZScore, fill = ZScore_Groups)) +
-    geom_violin(alpha = 0.7) +
-    geom_boxplot(width = 0.1, outlier.shape = NA) +
-    geom_hline(yintercept = THRESHOLD_Z, linetype = "dashed", color = "red", linewidth = 1) +
-    scale_fill_manual(values = c("B memory" = "#FF4B4B", "Rest B-cells" = "#4B8BFF", "Other (Non-B)" = "#BEBEBE")) +
-    labs(title = "Spezifitäts-Check: AUCell Z-Score",
-         subtitle = paste("Rote Linie = Threshold Z =", THRESHOLD_Z),
-         x = "Zellgruppen", y = "AUCell Z-Score") +
-    theme_minimal()
-print(p_z3)
-dev.off()
-
-
-# Error Type Plot (TP, FP, FN, TN)
-pbmc$Error_Type <- paste0(ifelse(pbmc$Prediction == "Positive", "P", "N"), 
-                          ifelse(pbmc$GT_Class == "Positive", "T", "F"))
+print("Confusion Matrix:")
+print(ConfusionMatrix)
+print(paste("Metriken: Prec:", round(Precision,4), "Rec:", round(Recall,4), "F1:", round(F1_Score,4), "Acc:", round(Accuracy,4)))
 
 pbmc$Error_Type <- case_when(
     pbmc$Prediction == "Positive" & pbmc$GT_Class == "Positive" ~ "TP",
@@ -171,12 +67,66 @@ pbmc$Error_Type <- case_when(
     pbmc$Prediction == "Negative" & pbmc$GT_Class == "Negative" ~ "TN"
 )
 
-png(filename = paste0("plots/04_Bench_ErrorTypes_Bmemory.png"), width = 900, height = 650)
-p_error <- ggplot(pbmc@meta.data, aes(x = Error_Type, y = AUCell_ZScore, fill = Error_Type)) +
-    geom_boxplot() +
-    geom_hline(yintercept = THRESHOLD_Z, linetype = "dashed", color = "red") +
-    labs(title = "AUCell Z-Score nach Fehlerklasse (Ziel: B memory)") +
-    theme_minimal()
-print(p_error)
+# --- Visulaisierungen ---
+
+# --- UMAP: AUCell Raw Scores ---
+png(filename = "plots/AUCell_Bmemory_UMAP_Raw.png", width = 900, height = 700)
+FeaturePlot(pbmc, features = "AUCell_Raw", reduction = "umap", label = TRUE, repel = TRUE, raster = TRUE) +
+    scale_colour_viridis_c(option = "magma") +
+    labs(title = "AUCell Score (Memory B) auf UMAP", color = "Score")
 dev.off()
+
+# --- Violin: AUCell Raw Scores ---
+png(filename = "plots/AUCell_Bmemory_Violin_l1.png", width = 1000, height = 600)
+p_l1 <- VlnPlot(pbmc, features = "AUCell_Raw", group.by = "celltype.l1", pt.size = 0) +
+    labs(title = "AUCell Score Verteilung über Haupt-Zelllinien (l1)") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+print(p_l1)
+dev.off()
+
+# --- UMAP: Error Mapping (TP, FP, FN, TN) ---
+png(filename = "plots/AUCell_Bmemory_Error_UMAP.png", width = 1000, height = 800)
+DimPlot(pbmc, group.by = "Error_Type", reduction = "umap", raster = TRUE) +
+    scale_color_manual(values = c("TP"="#228B22", "FP"="#FF4500", "FN"="#1E90FF", "TN"="#D3D3D3")) +
+    labs(title = "Mapping der Fehlerklassen auf UMAP", subtitle = paste("Threshold Z =", THRESHOLD_Z))
+dev.off()
+
+# --- ROC Kurve ---
+print("--- Erstelle ROC Plot ---")
+roc_obj <- roc(response = pbmc$GT_Response, predictor = pbmc$AUCell_ZScore, direction = "<")
+png(filename = "plots/AUCell_Bmemory_ROC.png", width = 700, height = 700)
+plot(roc_obj, col="#E41A1C", lwd=3, main=paste("ROC Kurve (AUC:", round(auc(roc_obj),3), ")"))
+dev.off()
+
+# --- PR Kurve ---
+print("--- Erstelle PR Plot ---")
+eval_df <- data.frame(score = pbmc$AUCell_ZScore, gt = pbmc$GT_Response) %>% arrange(desc(score)) %>%
+    mutate(tp_cum = cumsum(gt), fp_cum = cumsum(1 - gt),
+           precision_vec = tp_cum / (tp_cum + fp_cum), recall_vec = tp_cum / sum(gt))
+
+png(filename = "plots/AUCell_Bmemory_PR_Optimized.png", width = 800, height = 700)
+ggplot(eval_df, aes(x = recall_vec, y = precision_vec)) +
+    geom_line(color = "#E41A1C", linewidth = 1.2) +
+    annotate("point", x = Recall, y = Precision, color = "black", size = 4, shape = 18) +
+    annotate("text", x = Recall + 0.02, y = Precision + 0.02, 
+             label = paste0("Aktueller Punkt\nPrec: ", round(Precision,2), "\nRec: ", round(Recall,2))) +
+    labs(title = "Precision-Recall Kurve", x = "Recall", y = "Precision") +
+    theme_minimal()
+dev.off()
+
+# --- Violin: Z-Score Verteilung (3 Gruppen) ---
+pbmc$ZScore_Groups <- factor(case_when(
+    pbmc$celltype.l2 == "B memory" ~ "B memory",
+    pbmc$celltype.l1 == "B" ~ "Rest B-cells",
+    TRUE ~ "Other"
+), levels = c("B memory", "Rest B-cells", "Other"))
+
+png(filename = "plots/AUCell_Bmemory_ZScore_3Groups.png", width = 800, height = 600)
+ggplot(pbmc@meta.data, aes(x = ZScore_Groups, y = AUCell_ZScore, fill = ZScore_Groups)) +
+    geom_violin(alpha = 0.7) + geom_boxplot(width = 0.1, outlier.shape = NA) +
+    geom_hline(yintercept = THRESHOLD_Z, linetype = "dashed", color = "red") +
+    scale_fill_manual(values = c("B memory"="#FF4B4B", "Rest B-cells"="#4B8BFF", "Other"="#BEBEBE")) +
+    theme_minimal()
+dev.off()
+
 
