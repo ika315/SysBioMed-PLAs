@@ -9,6 +9,10 @@ library(Seurat)
 library(ggplot2)
 library(SeuratObject)
 
+options(mc.cores = as.integer(Sys.getenv("SLURM_CPUS_PER_TASK", 1)))
+
+base_dir <- getwd()
+
 ds_name <- "seu_sx_final"
 path = "~/SysBioMed-PLAs/data/seu_sx_final.rds"
 
@@ -126,79 +130,156 @@ pbmc$confusion <- with(pbmc@meta.data,
 table(pbmc$confusion)
 
 
-faceted <- ggplot(
-  pbmc@meta.data,
-  aes(x = Vision_B_Cell_Signature)
-) +
-  geom_density(fill = "steelblue", alpha = 0.6) +
-  facet_wrap(~ confusion, scales = "free_y") +
-  geom_vline(xintercept = threshold, linetype = "dashed", color = "red") +
-  theme_classic() +
-  labs(
-    title = "B cell naive signature score distributions",
-    subtitle = "Faceted by TP / FP / FN / TN",
-    x = "B cell naive signature score",
-    y = "Density"
-  )
-# ----------------------------------------------------
-# VISUALIZATION
-# ----------------------------------------------------
-
-ggsave(
-  filename = "plots/seurat_downgrade/04_Vision_FacettedPlot.png",
-  plot = faceted,
-  width = 10,
-  height = 6,
-  dpi = 300
-)
-# UMAP colored by Vision score
-png(filename = "plots/seurat_downgrade/04_Vision_UMAP.png", width = 800, height = 700)
-FeaturePlot(pbmc, features = score_name, reduction = "umap")
-dev.off()
-
-# Violin plot by cluster
-png(filename = "plots/seurat_downgrade/04_Vision_VlnPlot.png", width = 800, height = 600)
-VlnPlot(pbmc, features = score_name,
-        group.by = "seurat_clusters",
-        pt.size = 0.5, ncol = 1)
-dev.off()
-
 tryCatch({
   
-  # Z-Score
-  print("Führe Z-Score Normalisierung durch...")
+  message("=== Starting plotting block ===")
   
-  scores <- pbmc@meta.data[[score_name]]
+  ## ------------------------------------------------
+  ## Ensure output directories exist
+  ## ------------------------------------------------
+  dir.create(file.path(base_dir, "plots", "counts_matrix"),
+             recursive = TRUE, showWarnings = FALSE)
+  dir.create(file.path(base_dir, "plots", "seurat_downgrade"),
+             recursive = TRUE, showWarnings = FALSE)
   
-  mean_score <- mean(scores, na.rm = TRUE)
-  sd_score   <- sd(scores, na.rm = TRUE)
+  ## ------------------------------------------------
+  ## RAW SCORE PLOTS
+  ## ------------------------------------------------
   
-  pbmc$Vision_ZScore <- (scores - mean_score) / sd_score
-  score_plot_name <- "Vision_ZScore"
+  ## UMAP (RAW)
+  fn_umap_raw <- file.path(
+    base_dir, "plots", "seurat_downgrade",
+    paste0("04_Vision_UMAP_", ds_name, "_RAW_Score.png")
+  )
   
-  # UMAP Plot 
-  plot_filename_umap <- paste0("/plots/seurat_downgrade/04_Vision_UMAP_", ds_name, "_ZScore.png")
-  
-  png(filename = plot_filename_umap, width = 1000, height = 800)
-  print(FeaturePlot(pbmc, features = score_plot_name, reduction = "umap", pt.size = 0.5))
+  png(fn_umap_raw, width = 800, height = 700)
+  print(
+    FeaturePlot(pbmc,
+                features = "Vision_B_Cell_Signature",
+                reduction = "umap",
+                label = TRUE,
+                label.size = 6,
+                repel = TRUE,
+                raster = TRUE) +
+      scale_colour_viridis_c(option = "magma") +
+      labs(title = "Vision Score auf UMAP",
+           subtitle = "RAW score",
+           color = "Vision Score") +
+      theme(legend.position = "right")
+  )
   dev.off()
   
-  print(paste("UMAP Z-Score Plot gespeichert:", plot_filename_umap))
+  ## Violin (RAW)
+  fn_vln_raw <- file.path(
+    base_dir, "plots", "seurat_downgrade",
+    paste0("04_Vision_VlnPlot_byClusters_", ds_name, "_RAW_Score.png")
+  )
   
-  # Violin Plot
-  plot_filename_vln <- paste0("/plots/seurat_downgrade/04_Vision_UMAP_byClusters_", ds_name, "_ZScore.png")
-  
-  png(filename = plot_filename_vln, width = 800, height = 600)
-  print(VlnPlot(pbmc, features = score_plot_name,
-                group.by = "seurat_clusters",
-                pt.size = 0.1, ncol = 1))
+  png(fn_vln_raw, width = 800, height = 600)
+  print(
+    VlnPlot(pbmc,
+            features = "Vision_B_Cell_Signature",
+            group.by = "seurat_clusters",
+            pt.size = 0,
+            ncol = 1) +
+      labs(title = "Vision RAW Score Verteilung über Cluster") +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  )
   dev.off()
   
-  print(paste("Violin Z-Score Plot gespeichert:", plot_filename_vln))
+  ## ------------------------------------------------
+  ## FACETED CONFUSION DISTRIBUTION (RAW SCORE)
+  ## ------------------------------------------------
+  
+  fn_faceted <- file.path(
+    base_dir, "plots", "counts_matrix",
+    "04_Vision_Raw_Facetted_TP_FP_FN_TN.png"
+  )
+  
+  faceted <- ggplot(
+    pbmc@meta.data,
+    aes(x = Vision_B_Cell_Signature)
+  ) +
+    geom_density(fill = "steelblue", alpha = 0.6) +
+    facet_wrap(~ confusion, scales = "free_y") +
+    geom_vline(xintercept = threshold,
+               linetype = "dashed", color = "red") +
+    theme_classic() +
+    labs(
+      title = "B cell naive signature score distributions",
+      subtitle = "Faceted by TP / FP / FN / TN",
+      x = "B cell naive signature score",
+      y = "Density"
+    )
+  
+  ggsave(
+    filename = fn_faceted,
+    plot = faceted,
+    width = 10,
+    height = 6,
+    dpi = 300
+  )
+  
+  ## ------------------------------------------------
+  ## Z-SCORE COMPUTATION
+  ## ------------------------------------------------
+  
+  message("Computing Vision Z-score")
+  
+  scores <- pbmc@meta.data[["Vision_B_Cell_Signature"]]
+  pbmc$Vision_ZScore <- as.vector(scale(scores))
+  
+  ## ------------------------------------------------
+  ## Z-SCORE PLOTS
+  ## ------------------------------------------------
+  
+  ## UMAP (Z)
+  fn_umap_z <- file.path(
+    base_dir, "plots", "seurat_downgrade",
+    paste0("04_Vision_UMAP_", ds_name, "_ZScore.png")
+  )
+  
+  png(fn_umap_z, width = 1000, height = 800)
+  print(
+    FeaturePlot(pbmc,
+                features = "Vision_ZScore",
+                reduction = "umap",
+                label = TRUE,
+                label.size = 6,
+                repel = TRUE,
+                raster = TRUE) +
+      scale_colour_viridis_c(option = "magma") +
+      labs(title = "Vision Z-Score auf UMAP",
+           subtitle = "standardized score",
+           color = "Vision Z-Score") +
+      theme(legend.position = "right")
+  )
+  dev.off()
+  
+  ## Violin (Z)
+  fn_vln_z <- file.path(
+    base_dir, "plots", "seurat_downgrade",
+    paste0("04_Vision_VlnPlot_byClusters_", ds_name, "_ZScore.png")
+  )
+  
+  png(fn_vln_z, width = 800, height = 600)
+  print(
+    VlnPlot(pbmc,
+            features = "Vision_ZScore",
+            group.by = "seurat_clusters",
+            pt.size = 0,
+            ncol = 1) +
+      labs(title = "Vision Z-Score Verteilung über Cluster") +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  )
+  dev.off()
+  
+  message("=== Plotting block finished successfully ===")
   
 }, error = function(e) {
   
-  print("Z-Score / plotting block failed, continuing pipeline.")
-  print(e$message)
+  message("!!! Plotting block failed — continuing pipeline !!!")
+  message("Error message:")
+  message(e$message)
   
 })
