@@ -182,10 +182,7 @@ tryCatch({
   score_plot_name <- "Vision_ZScore"
   
   # UMAP Plot 
-  plot_filename_umap <- paste0(
-    base_dir, "/plots/counts_matrix/04_Vision_UMAP_",
-    ds_name, "_ZScore.png"
-  )
+  plot_filename_umap <- paste0("/plots/counts_matrix/04_Vision_UMAP_", ds_name, "_ZScore.png")
   
   png(filename = plot_filename_umap, width = 1000, height = 800)
   print(FeaturePlot(pbmc, features = score_plot_name, reduction = "umap", pt.size = 0.5))
@@ -194,10 +191,7 @@ tryCatch({
   print(paste("UMAP Z-Score Plot gespeichert:", plot_filename_umap))
   
   # Violin Plot
-  plot_filename_vln <- paste0(
-    base_dir, "/plots/counts_matrix/04_Vision_UMAP_byClusters_",
-    ds_name, "_ZScore.png"
-  )
+  plot_filename_vln <- paste0("/plots/counts_matrix/04_Vision_UMAP_byClusters_", ds_name, "_ZScore.png")
   
   png(filename = plot_filename_vln, width = 800, height = 600)
   print(VlnPlot(pbmc, features = score_plot_name,

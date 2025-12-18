@@ -51,6 +51,8 @@ vision_score <- as.numeric(vision_auc[, "B_Cell_Signature"])
 pbmc$Vision_B_Cell_Signature <- vision_score
 score_name <- "Vision_B_Cell_Signature"
 
+pbmc$Vision_Raw <- pbmc$Vision_B_Cell_Signature
+
 # UMAP
 png(filename = "plots/Vision_NaiveB_UMAP_l2.png", width = 900, height = 700)
 p_umap <- FeaturePlot(pbmc, features = "Vision_Raw", reduction = "umap", label = TRUE, label.size = 6, repel = TRUE, raster = TRUE) + 
