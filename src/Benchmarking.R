@@ -69,6 +69,28 @@ pbmc$Error_Type <- case_when(
 
 # --- Visulaisierungen ---
 
+# --- Refernz UMAP mit celltypes ---
+print("--- Erstelle Referenz-UMAP der Zelltypen ---")
+
+png(filename = "plots/04_Reference_UMAP_Celltypes.png", width = 1200, height = 800)
+
+p_ref <- DimPlot(pbmc, 
+                 group.by = "celltype.l1", 
+                 reduction = "umap", 
+                 label = TRUE, 
+                 repel = TRUE, 
+                 label.size = 5, 
+                 raster = TRUE) +
+    labs(title = "Referenz-UMAP: Zelltypen (l1)",
+         subtitle = "Basiert auf der originalen Annotation (Ground Truth)",
+         color = "Haupt-Zelltyp") +
+    theme_minimal() +
+    theme(legend.position = "right")
+
+print(p_ref)
+dev.off()
+
+
 # --- UMAP: AUCell Raw Scores ---
 png(filename = "plots/AUCell_Bmemory_UMAP_Raw.png", width = 900, height = 700)
 
