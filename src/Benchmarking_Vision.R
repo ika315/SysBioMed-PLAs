@@ -6,7 +6,6 @@
 
 library(Seurat)
 library(VISION)
-library(UCell)
 library(pROC)
 library(dplyr)
 library(ggplot2)
