@@ -9,7 +9,7 @@ library(Seurat)
 library(ggplot2)
 library(SeuratObject)
 
-options(mc.cores = as.integer(Sys.getenv("SLURM_CPUS_PER_TASK", 1)))
+#options(mc.cores = as.integer(Sys.getenv("SLURM_CPUS_PER_TASK", 1)))
 
 base_dir <- getwd()
 
@@ -137,8 +137,7 @@ tryCatch({
   ## ------------------------------------------------
   ## Ensure output directories exist
   ## ------------------------------------------------
-  dir.create(file.path(base_dir, "plots", "counts_matrix"),
-             recursive = TRUE, showWarnings = FALSE)
+
   dir.create(file.path(base_dir, "plots", "seurat_downgrade"),
              recursive = TRUE, showWarnings = FALSE)
   
@@ -192,7 +191,7 @@ tryCatch({
   ## ------------------------------------------------
   
   fn_faceted <- file.path(
-    base_dir, "plots", "counts_matrix",
+    base_dir, "plots", "seurat_downgrade",
     "04_Vision_Raw_Facetted_TP_FP_FN_TN.png"
   )
   
@@ -206,7 +205,7 @@ tryCatch({
                linetype = "dashed", color = "red") +
     theme_classic() +
     labs(
-      title = "B cell naive signature score distributions",
+      title = "B cell naive signature raw score distributions",
       subtitle = "Faceted by TP / FP / FN / TN",
       x = "B cell naive signature score",
       y = "Density"
@@ -221,13 +220,17 @@ tryCatch({
   )
   
   ## ------------------------------------------------
-  ## Z-SCORE COMPUTATION
+  ## Z-SCORE COMPUTATION (explicit)
   ## ------------------------------------------------
   
-  message("Computing Vision Z-score")
+  message("Computing Vision Z-score (explicit mean/sd)")
   
   scores <- pbmc@meta.data[["Vision_B_Cell_Signature"]]
-  pbmc$Vision_ZScore <- as.vector(scale(scores))
+  
+  vision_mean <- mean(scores, na.rm = TRUE)
+  vision_sd   <- sd(scores, na.rm = TRUE)
+  
+  pbmc$Vision_ZScore <- (scores - vision_mean) / vision_sd
   
   ## ------------------------------------------------
   ## Z-SCORE PLOTS
@@ -273,6 +276,44 @@ tryCatch({
       theme(axis.text.x = element_text(angle = 45, hjust = 1))
   )
   dev.off()
+  
+  ## ------------------------------------------------
+  ## FACETED CONFUSION DISTRIBUTION (Z-SCORE)
+  ## ------------------------------------------------
+  
+  fn_faceted_z <- file.path(
+    base_dir, "plots", "seurat_downgrade",
+    "04_Vision_ZScore_Facetted_TP_FP_FN_TN.png"
+  )
+  
+  z_threshold <- (threshold - vision_mean) / vision_sd
+  
+  faceted_z <- ggplot(
+    pbmc@meta.data,
+    aes(x = Vision_ZScore)
+  ) +
+    geom_density(fill = "steelblue", alpha = 0.6) +
+    facet_wrap(~ confusion, scales = "free_y") +
+    geom_vline(
+      xintercept = z_threshold,
+      linetype = "dashed",
+      color = "red"
+    ) +
+    theme_classic() +
+    labs(
+      title = "B cell naive signature Z-score distributions",
+      subtitle = "Faceted by TP / FP / FN / TN",
+      x = "B cell naive signature Z-score",
+      y = "Density"
+    )
+  
+  ggsave(
+    filename = fn_faceted_z,
+    plot = faceted_z,
+    width = 10,
+    height = 6,
+    dpi = 300
+  )
   
   message("=== Plotting block finished successfully ===")
   

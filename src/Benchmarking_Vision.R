@@ -10,7 +10,7 @@ library(pROC)
 library(dplyr)
 library(ggplot2)
 
-options(mc.cores = as.integer(Sys.getenv("SLURM_CPUS_PER_TASK", 1)))
+#options(mc.cores = as.integer(Sys.getenv("SLURM_CPUS_PER_TASK", 1)))
 
 PATH_DATA <- "~/SysBioMed-PLAs/data/seu_sx_final.rds"
 DATASET_NAME <- "seu_sx_final"
