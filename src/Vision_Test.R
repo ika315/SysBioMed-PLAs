@@ -105,30 +105,85 @@ score_name <- "Vision_B_Cell_Signature"
 
 # ground truth vs pred
 
-# change seurat_annotations to celltype.l2
+## ----------------------------------------------------
+## Z-SCORE + CONFUSION MATRIX (ALIGNED LOGIC)
+## ----------------------------------------------------
 
-# ground truth
-pbmc$true_naive_b <- pbmc$celltype.l2 == "Naive B"
-#pbmc$true_naive_b <- pbmc$seurat_annotations == "B"
+# Ground truth
+pbmc$GT_Response <- ifelse(pbmc$celltype.l2 == "B naive", 1, 0)
 
-# predicted from score
-# logic:
-# look only at true B cells
-# compute the median of their Vision signature score
-# use this as a decision threshold
-threshold <- median(pbmc$Vision_B_Cell_Signature[pbmc$true_naive_b])
-pbmc$pred_naive_b <- pbmc$Vision_B_Cell_Signature >= threshold # this is saying: “a cell must score at least as high as a typical true (naive) B cell”
+# Z-score (same as benchmarking script)
+pbmc$Vision_ZScore <- as.vector(scale(pbmc$Vision_B_Cell_Signature))
 
+THRESHOLD_Z <- 1.5
 
-# confusion classes
-pbmc$confusion <- with(pbmc@meta.data,
-                       ifelse(true_naive_b & pred_naive_b, "TP",
-                              ifelse(!true_naive_b & pred_naive_b, "FP",
-                                     ifelse(true_naive_b & !pred_naive_b, "FN",
-                                            "TN")))
+# Prediction
+pbmc$Prediction <- ifelse(pbmc$Vision_ZScore > THRESHOLD_Z, "Positive", "Negative")
+pbmc$GT_Class   <- ifelse(pbmc$GT_Response == 1, "Positive", "Negative")
+
+# Confusion matrix
+ConfusionMatrix <- table(
+  Predicted = pbmc$Prediction,
+  Actual    = pbmc$GT_Class
 )
 
-table(pbmc$confusion)
+TP <- ConfusionMatrix["Positive", "Positive"]
+FP <- ConfusionMatrix["Positive", "Negative"]
+FN <- ConfusionMatrix["Negative", "Positive"]
+TN <- ConfusionMatrix["Negative", "Negative"]
+
+# Metrics
+Precision   <- TP / (TP + FP)
+Recall      <- TP / (TP + FN)
+Specificity <- TN / (TN + FP)
+Accuracy    <- (TP + TN) / sum(ConfusionMatrix)
+F1_Score    <- 2 * (Precision * Recall) / (Precision + Recall)
+
+# Error type (same naming as new script)
+pbmc$confusion <- dplyr::case_when(
+  pbmc$Prediction == "Positive" & pbmc$GT_Class == "Positive" ~ "TP",
+  pbmc$Prediction == "Positive" & pbmc$GT_Class == "Negative" ~ "FP",
+  pbmc$Prediction == "Negative" & pbmc$GT_Class == "Positive" ~ "FN",
+  pbmc$Prediction == "Negative" & pbmc$GT_Class == "Negative" ~ "TN"
+)
+
+## ----------------------------------------------------
+## PRINT METRICS
+## ----------------------------------------------------
+
+message("=== Vision Benchmarking Metrics (Naive B) ===")
+
+print(ConfusionMatrix)
+
+metrics_df <- data.frame(
+  Metric = c("Precision", "Recall", "Specificity", "Accuracy", "F1"),
+  Value  = c(Precision, Recall, Specificity, Accuracy, F1_Score)
+)
+
+print(metrics_df)
+
+message(
+  sprintf(
+    "Precision: %.3f | Recall: %.3f | F1: %.3f | Accuracy: %.3f",
+    Precision, Recall, F1_Score, Accuracy
+  )
+)
+
+## ----------------------------------------------------
+## SAVE FINAL PBMC OBJECT
+## ----------------------------------------------------
+
+dir.create("results", recursive = TRUE, showWarnings = FALSE)
+
+pbmc_out <- file.path(
+  "results",
+  paste0("pbmc_", ds_name, "_Vision_NaiveB.rds")
+)
+
+saveRDS(pbmc, pbmc_out)
+
+message("Saved final pbmc object to:")
+message(pbmc_out)
 
 
 tryCatch({
@@ -138,50 +193,47 @@ tryCatch({
   ## ------------------------------------------------
   ## Ensure output directories exist
   ## ------------------------------------------------
-
-  dir.create(file.path(base_dir, "plots", "seurat_downgrade"),
-             recursive = TRUE, showWarnings = FALSE)
+  plot_dir <- file.path(base_dir, "plots", "seurat_downgrade")
+  dir.create(plot_dir, recursive = TRUE, showWarnings = FALSE)
   
   ## ------------------------------------------------
-  ## RAW SCORE PLOTS
+  ## RAW SCORE PLOTS (DESCRIPTIVE)
   ## ------------------------------------------------
   
   ## UMAP (RAW)
-  fn_umap_raw <- file.path(
-    base_dir, "plots", "seurat_downgrade",
-    paste0("04_Vision_UMAP_", ds_name, "_RAW_Score.png")
+  png(
+    file.path(plot_dir, paste0("04_Vision_UMAP_", ds_name, "_RAW_Score.png")),
+    width = 800, height = 700
   )
-  
-  png(fn_umap_raw, width = 800, height = 700)
   print(
-    FeaturePlot(pbmc,
-                features = "Vision_B_Cell_Signature",
-                reduction = "umap",
-                label = TRUE,
-                label.size = 6,
-                repel = TRUE,
-                raster = TRUE) +
+    FeaturePlot(
+      pbmc,
+      features = "Vision_B_Cell_Signature",
+      reduction = "umap",
+      raster = TRUE
+    ) +
       scale_colour_viridis_c(option = "magma") +
-      labs(title = "Vision Score auf UMAP",
-           subtitle = "RAW score",
-           color = "Vision Score") +
-      theme(legend.position = "right")
+      labs(
+        title = "Vision Score auf UMAP",
+        subtitle = "Raw score",
+        color = "Vision Score"
+      ) +
+      theme_minimal()
   )
   dev.off()
   
   ## Violin (RAW)
-  fn_vln_raw <- file.path(
-    base_dir, "plots", "seurat_downgrade",
-    paste0("04_Vision_VlnPlot_byClusters_", ds_name, "_RAW_Score.png")
+  png(
+    file.path(plot_dir, paste0("04_Vision_VlnPlot_byClusters_", ds_name, "_RAW_Score.png")),
+    width = 800, height = 600
   )
-  
-  png(fn_vln_raw, width = 800, height = 600)
   print(
-    VlnPlot(pbmc,
-            features = "Vision_B_Cell_Signature",
-            group.by = "seurat_clusters",
-            pt.size = 0,
-            ncol = 1) +
+    VlnPlot(
+      pbmc,
+      features = "Vision_B_Cell_Signature",
+      group.by = "seurat_clusters",
+      pt.size = 0
+    ) +
       labs(title = "Vision RAW Score Verteilung über Cluster") +
       theme(axis.text.x = element_text(angle = 45, hjust = 1))
   )
@@ -191,88 +243,74 @@ tryCatch({
   ## FACETED CONFUSION DISTRIBUTION (RAW SCORE)
   ## ------------------------------------------------
   
-  fn_faceted <- file.path(
-    base_dir, "plots", "seurat_downgrade",
-    "04_Vision_Raw_Facetted_TP_FP_FN_TN.png"
-  )
+  raw_threshold <- mean(pbmc$Vision_B_Cell_Signature, na.rm = TRUE) +
+    THRESHOLD_Z * sd(pbmc$Vision_B_Cell_Signature, na.rm = TRUE)
   
-  faceted <- ggplot(
+  faceted_raw <- ggplot(
     pbmc@meta.data,
     aes(x = Vision_B_Cell_Signature)
   ) +
     geom_density(fill = "steelblue", alpha = 0.6) +
     facet_wrap(~ confusion, scales = "free_y") +
-    geom_vline(xintercept = threshold,
-               linetype = "dashed", color = "red") +
+    geom_vline(
+      xintercept = raw_threshold,
+      linetype = "dashed",
+      color = "red"
+    ) +
     theme_classic() +
     labs(
-      title = "B cell naive signature raw score distributions",
-      subtitle = "Faceted by TP / FP / FN / TN",
-      x = "B cell naive signature score",
+      title = "B naive Signatur – RAW Score Verteilungen",
+      subtitle = "Faceted by TP / FP / FN / TN (Z-score decision rule)",
+      x = "Vision RAW Score",
       y = "Density"
     )
   
   ggsave(
-    filename = fn_faceted,
-    plot = faceted,
+    filename = file.path(plot_dir, "04_Vision_Raw_Facetted_TP_FP_FN_TN.png"),
+    plot = faceted_raw,
     width = 10,
     height = 6,
     dpi = 300
   )
   
   ## ------------------------------------------------
-  ## Z-SCORE COMPUTATION (explicit)
-  ## ------------------------------------------------
-  
-  message("Computing Vision Z-score (explicit mean/sd)")
-  
-  scores <- pbmc@meta.data[["Vision_B_Cell_Signature"]]
-  
-  vision_mean <- mean(scores, na.rm = TRUE)
-  vision_sd   <- sd(scores, na.rm = TRUE)
-  
-  pbmc$Vision_ZScore <- (scores - vision_mean) / vision_sd
-  
-  ## ------------------------------------------------
-  ## Z-SCORE PLOTS
+  ## Z-SCORE PLOTS (DECISION-RELEVANT)
   ## ------------------------------------------------
   
   ## UMAP (Z)
-  fn_umap_z <- file.path(
-    base_dir, "plots", "seurat_downgrade",
-    paste0("04_Vision_UMAP_", ds_name, "_ZScore.png")
+  png(
+    file.path(plot_dir, paste0("04_Vision_UMAP_", ds_name, "_ZScore.png")),
+    width = 1000, height = 800
   )
-  
-  png(fn_umap_z, width = 1000, height = 800)
   print(
-    FeaturePlot(pbmc,
-                features = "Vision_ZScore",
-                reduction = "umap",
-                label = TRUE,
-                label.size = 6,
-                repel = TRUE,
-                raster = TRUE) +
+    FeaturePlot(
+      pbmc,
+      features = "Vision_ZScore",
+      reduction = "umap",
+      raster = TRUE
+    ) +
       scale_colour_viridis_c(option = "magma") +
-      labs(title = "Vision Z-Score auf UMAP",
-           subtitle = "standardized score",
-           color = "Vision Z-Score") +
-      theme(legend.position = "right")
+      labs(
+        title = "Vision Z-Score auf UMAP",
+        subtitle = paste("Threshold Z =", THRESHOLD_Z),
+        color = "Vision Z-Score"
+      ) +
+      theme_minimal()
   )
   dev.off()
   
   ## Violin (Z)
-  fn_vln_z <- file.path(
-    base_dir, "plots", "seurat_downgrade",
-    paste0("04_Vision_VlnPlot_byClusters_", ds_name, "_ZScore.png")
+  png(
+    file.path(plot_dir, paste0("04_Vision_VlnPlot_byClusters_", ds_name, "_ZScore.png")),
+    width = 800, height = 600
   )
-  
-  png(fn_vln_z, width = 800, height = 600)
   print(
-    VlnPlot(pbmc,
-            features = "Vision_ZScore",
-            group.by = "seurat_clusters",
-            pt.size = 0,
-            ncol = 1) +
+    VlnPlot(
+      pbmc,
+      features = "Vision_ZScore",
+      group.by = "seurat_clusters",
+      pt.size = 0
+    ) +
       labs(title = "Vision Z-Score Verteilung über Cluster") +
       theme(axis.text.x = element_text(angle = 45, hjust = 1))
   )
@@ -282,13 +320,6 @@ tryCatch({
   ## FACETED CONFUSION DISTRIBUTION (Z-SCORE)
   ## ------------------------------------------------
   
-  fn_faceted_z <- file.path(
-    base_dir, "plots", "seurat_downgrade",
-    "04_Vision_ZScore_Facetted_TP_FP_FN_TN.png"
-  )
-  
-  z_threshold <- (threshold - vision_mean) / vision_sd
-  
   faceted_z <- ggplot(
     pbmc@meta.data,
     aes(x = Vision_ZScore)
@@ -296,20 +327,20 @@ tryCatch({
     geom_density(fill = "steelblue", alpha = 0.6) +
     facet_wrap(~ confusion, scales = "free_y") +
     geom_vline(
-      xintercept = z_threshold,
+      xintercept = THRESHOLD_Z,
       linetype = "dashed",
       color = "red"
     ) +
     theme_classic() +
     labs(
-      title = "B cell naive signature Z-score distributions",
+      title = "B naive Signatur – Z-Score Verteilungen",
       subtitle = "Faceted by TP / FP / FN / TN",
-      x = "B cell naive signature Z-score",
+      x = "Vision Z-Score",
       y = "Density"
     )
   
   ggsave(
-    filename = fn_faceted_z,
+    filename = file.path(plot_dir, "04_Vision_ZScore_Facetted_TP_FP_FN_TN.png"),
     plot = faceted_z,
     width = 10,
     height = 6,
@@ -320,7 +351,7 @@ tryCatch({
   
 }, error = function(e) {
   
-  message("!!! Plotting block failed — continuing pipeline !!!")
+  message("!!! Plotting failed — continuing pipeline !!!")
   message("Error message:")
   message(e$message)
   

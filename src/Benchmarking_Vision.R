@@ -30,12 +30,13 @@ sig_vision <- make_signature(genes = genes, sig_name = "Naive_B_Cell_Signature",
 
 pbmc$GT_Response <- ifelse(pbmc[[gt_col_name]] == "B naive", 1, 0)
 
-
-# --- VISION SCORING ---
-print("--- Berechne Vision Score ---")
 pbmc$celltype.l1 <- factor(pbmc$celltype.l1)
 pbmc$celltype.l2 <- factor(pbmc$celltype.l2)
 pbmc$celltype.l3 <- factor(pbmc$celltype.l3)
+
+
+# --- VISION SCORING ---
+print("--- Berechne Vision Score ---")
 
 pbmc[["RNA_v3"]] <- as(pbmc[["RNA"]], "Assay")
 DefaultAssay(pbmc) <- "RNA_v3"
@@ -49,14 +50,76 @@ vision_obj <- Vision(
 
 vision_obj <- analyze(vision_obj)
 
-vision_auc <- getSignatureScores(vision_obj)
-vision_score <- vision_auc[, "Naive_B_Cell_Signature"]
-vision_score <- as.numeric(vision_auc[, "Naive_B_Cell_Signature"])
+vision_scores <- getSignatureScores(vision_obj)[, "Naive_B_Cell_Signature"]
 
-pbmc$Vision_Naive_B_Cell_Signature <- vision_score
 score_name <- "Vision_Naive_B_Cell_Signature"
 
-pbmc$Vision_Raw <- pbmc$Vision_Naive_B_Cell_Signature
+pbmc$Vision_Raw <- as.numeric(vision_scores)
+pbmc$Vision_ZScore <- as.vector(scale(pbmc$Vision_Raw))
+
+THRESHOLD_Z <- 1.5
+
+pbmc$Prediction <- ifelse(pbmc$Vision_ZScore > THRESHOLD_Z, "Positive", "Negative")
+pbmc$GT_Class <- ifelse(pbmc$GT_Response == 1, "Positive", "Negative")
+
+ConfusionMatrix <- table(
+  Predicted = pbmc$Prediction,
+  Actual = pbmc$GT_Class
+)
+
+TP <- ConfusionMatrix["Positive", "Positive"]
+FP <- ConfusionMatrix["Positive", "Negative"]
+FN <- ConfusionMatrix["Negative", "Positive"]
+TN <- ConfusionMatrix["Negative", "Negative"]
+
+Precision   <- TP / (TP + FP)
+Recall      <- TP / (TP + FN)
+Specificity <- TN / (TN + FP)
+Accuracy    <- (TP + TN) / sum(ConfusionMatrix)
+F1_Score    <- 2 * (Precision * Recall) / (Precision + Recall)
+
+pbmc$Error_Type <- dplyr::case_when(
+  pbmc$Prediction == "Positive" & pbmc$GT_Class == "Positive" ~ "TP",
+  pbmc$Prediction == "Positive" & pbmc$GT_Class == "Negative" ~ "FP",
+  pbmc$Prediction == "Negative" & pbmc$GT_Class == "Positive" ~ "FN",
+  pbmc$Prediction == "Negative" & pbmc$GT_Class == "Negative" ~ "TN"
+)
+
+## ------------------------------------------------
+## PRINT EVALUATION METRICS
+## ------------------------------------------------
+message("=== Vision Benchmarking Metrics (Naive B) ===")
+
+print(ConfusionMatrix)
+
+metrics_df <- data.frame(
+  Metric = c("Precision", "Recall", "Specificity", "Accuracy", "F1"),
+  Value = c(Precision, Recall, Specificity, Accuracy, F1_Score)
+)
+
+print(metrics_df)
+
+message(
+  sprintf(
+    "Precision: %.3f | Recall: %.3f | F1: %.3f | Accuracy: %.3f",
+    Precision, Recall, F1_Score, Accuracy
+  )
+)
+
+## ------------------------------------------------
+## SAVE FINAL PBMC OBJECT (WITH VISION SCORES)
+## ------------------------------------------------
+dir.create("results", recursive = TRUE, showWarnings = FALSE)
+
+pbmc_out_path <- file.path(
+  "results",
+  paste0("pbmc_", DATASET_NAME, "_Vision_NaiveB.rds")
+)
+
+saveRDS(pbmc, pbmc_out_path)
+
+message("Saved final pbmc object to:")
+message(pbmc_out_path)
 
 tryCatch({
   
@@ -65,15 +128,52 @@ tryCatch({
   ## ------------------------------------------------
   ## Ensure output directories exist
   ## ------------------------------------------------
-  dir.create(file.path("plots"), recursive = TRUE, showWarnings = FALSE)
-  dir.create(file.path("plots", "seurat_downgrade"), recursive = TRUE, showWarnings = FALSE)
+  dir.create("plots", recursive = TRUE, showWarnings = FALSE)
+  dir.create(file.path("plots", "benchmarking_vision"), recursive = TRUE, showWarnings = FALSE)
   
   ## ------------------------------------------------
-  ## UMAP + VIOLIN (RAW SCORE) for l1 / l2 / l3
+  ## REFERENCE UMAP (GROUND TRUTH)
   ## ------------------------------------------------
-  
   annotation_levels <- c("celltype.l1", "celltype.l2", "celltype.l3")
   
+  for (ann in annotation_levels) {
+    
+    if (!ann %in% colnames(pbmc@meta.data)) {
+      message(paste("Skipping reference UMAP for", ann, "- column not found"))
+      next
+    }
+    
+    png(
+      filename = file.path("plots", "benchmarking_vision", paste0("04_Reference_UMAP_", ann, ".png")),
+      width = 1200,
+      height = 800
+    )
+    
+    print(
+      DimPlot(
+        pbmc,
+        group.by = ann,
+        reduction = "umap",
+        label = TRUE,
+        repel = TRUE,
+        label.size = 4,
+        raster = TRUE
+      ) +
+        labs(
+          title = paste("Referenz-UMAP:", ann),
+          subtitle = "Basierend auf der originalen Annotation (Ground Truth)",
+          color = ann
+        ) +
+        theme_minimal() +
+        theme(legend.position = "right")
+    )
+    
+    dev.off()
+  }
+  
+  ## ------------------------------------------------
+  ## UMAP + VIOLIN (RAW SCORE)
+  ## ------------------------------------------------
   for (ann in annotation_levels) {
     
     if (!ann %in% colnames(pbmc@meta.data)) {
@@ -83,41 +183,34 @@ tryCatch({
     
     message(paste("Plotting Vision RAW score for", ann))
     
-    ## ---- UMAP ----
-    fn_umap <- file.path(
-      "plots",
-      paste0("Vision_NaiveB_UMAP_", ann, ".png")
+    ## ---- UMAP (VISION SCORE) ----
+    png(
+      filename = file.path("plots", "benchmarking_vision", paste0("Vision_NaiveB_UMAP_", ann, ".png")),
+      width = 900, height = 700
     )
-    
-    png(fn_umap, width = 900, height = 700)
     
     print(
       FeaturePlot(
         pbmc,
         features = "Vision_Raw",
         reduction = "umap",
-        label = TRUE,
-        label.size = 6,
-        repel = TRUE,
         raster = TRUE
       ) +
         scale_colour_viridis_c(option = "magma") +
         labs(
-          title = "Vision Score (Naive B) auf UMAP",
-          subtitle = paste("Legende zeigt", ann),
-          color = "Vision Score"
+          title = "VISION Score (Naive B) auf UMAP",
+          subtitle = paste("Annotation:", ann),
+          color = "VISION Score"
         ) +
-        theme(legend.position = "right")
+        theme_minimal()
     )
     dev.off()
     
     ## ---- VIOLIN ----
-    fn_vln <- file.path(
-      "plots",
-      paste0("Vision_NaiveB_Violin_", ann, ".png")
+    png(
+      filename = file.path("plots", "benchmarking_vision", paste0("Vision_NaiveB_Violin_", ann, ".png")),
+      width = 1000, height = 600
     )
-    
-    png(fn_vln, width = 1000, height = 600)
     
     print(
       VlnPlot(
@@ -126,9 +219,7 @@ tryCatch({
         group.by = ann,
         pt.size = 0
       ) +
-        labs(
-          title = paste("Vision Score Verteilung über Zelllinie", ann)
-        ) +
+        labs(title = paste("VISION Score Verteilung –", ann)) +
         theme(axis.text.x = element_text(angle = 45, hjust = 1))
     )
     dev.off()
@@ -137,75 +228,120 @@ tryCatch({
   ## ------------------------------------------------
   ## PRECISION–RECALL CURVE
   ## ------------------------------------------------
+  eval_df <- data.frame(
+    score = pbmc$Vision_ZScore,
+    gt = pbmc$GT_Response
+  ) %>%
+    arrange(desc(score)) %>%
+    mutate(
+      tp_cum = cumsum(gt),
+      fp_cum = cumsum(1 - gt),
+      precision_vec = tp_cum / (tp_cum + fp_cum),
+      recall_vec = tp_cum / sum(gt)
+    )
   
-  fn_pr <- file.path("plots", "Vision_NaiveB_PrecisionRecall_Curve.png")
+  p_pr <- ggplot(eval_df, aes(x = recall_vec, y = precision_vec)) +
+    geom_line(color = "#E41A1C", linewidth = 1.2) +
+    labs(
+      title = "Precision–Recall Kurve (VISION)",
+      x = "Recall",
+      y = "Precision"
+    ) +
+    theme_minimal()
   
-  png(fn_pr, width = 800, height = 700)
+  png("plots/benchmarking_vision/Vision_NaiveB_PrecisionRecall_Curve.png", 800, 700)
   print(p_pr)
   dev.off()
   
   ## ------------------------------------------------
   ## Z-SCORE DISTRIBUTION (GT)
   ## ------------------------------------------------
+  p_z <- ggplot(
+    pbmc@meta.data,
+    aes(x = .data[[gt_col_name]], y = Vision_ZScore, fill = .data[[gt_col_name]])
+  ) +
+    geom_violin(alpha = 0.7) +
+    geom_boxplot(width = 0.1, outlier.shape = NA) +
+    geom_hline(yintercept = THRESHOLD_Z, linetype = "dashed", color = "red") +
+    labs(
+      title = "VISION Z-Score Verteilung über Zelltypen",
+      x = "Zelltyp",
+      y = "VISION Z-Score"
+    ) +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1),
+          legend.position = "none")
   
-  fn_zdist <- file.path("plots", "Vision_NaiveB_ZScore_Distribution.png")
-  
-  png(fn_zdist, width = 1500, height = 800)
+  png("plots/benchmarking_vision/Vision_NaiveB_ZScore_Distribution.png", 1500, 800)
   print(p_z)
   dev.off()
   
   ## ------------------------------------------------
   ## Z-SCORE 3-GROUP VIOLIN
   ## ------------------------------------------------
+  pbmc$ZScore_Groups <- factor(
+    dplyr::case_when(
+      pbmc$celltype.l2 == "B naive" ~ "B naive",
+      pbmc$celltype.l1 == "B" ~ "Rest B-cells",
+      TRUE ~ "Other"
+    ),
+    levels = c("B naive", "Rest B-cells", "Other")
+  )
   
-  fn_z3 <- file.path("plots", "Vision_NaiveB_ZScore_3Groups.png")
+  p_z3 <- ggplot(
+    pbmc@meta.data,
+    aes(x = ZScore_Groups, y = Vision_ZScore, fill = ZScore_Groups)
+  ) +
+    geom_violin(alpha = 0.7) +
+    geom_boxplot(width = 0.1, outlier.shape = NA) +
+    geom_hline(yintercept = THRESHOLD_Z, linetype = "dashed", color = "red") +
+    theme_minimal()
   
-  png(fn_z3, width = 800, height = 600)
+  png("plots/benchmarking_vision/Vision_NaiveB_ZScore_3Groups.png", 800, 600)
   print(p_z3)
   dev.off()
   
   ## ------------------------------------------------
-  ## ERROR TYPE BOXPLOTS
+  ## ERROR TYPE BOXPLOT
   ## ------------------------------------------------
+  p_error <- ggplot(
+    pbmc@meta.data,
+    aes(x = Error_Type, y = Vision_ZScore, fill = Error_Type)
+  ) +
+    geom_boxplot(outlier.shape = NA) +
+    theme_minimal() +
+    labs(title = "VISION Z-Score nach Fehlerklassen")
   
-  fn_err1 <- file.path("plots", "04_Bench_ErrorTypes_NaiveB.png")
-  png(fn_err1, width = 900, height = 650)
+  png("plots/benchmarking_vision/04_Bench_ErrorTypes_NaiveB.png", 900, 650)
   print(p_error)
   dev.off()
   
-  fn_err2 <- file.path("plots", "seurat_downgrade", "04_Vision_Bench_ErrorTypes_B.png")
-  png(fn_err2, width = 900, height = 650)
+  png("plots/benchmarking_vision/04_Vision_Bench_ErrorTypes_B.png", 900, 650)
   print(p_error)
   dev.off()
   
   ## ------------------------------------------------
   ## FACETED CONFUSION DISTRIBUTIONS
   ## ------------------------------------------------
+  faceted_z <- ggplot(pbmc@meta.data, aes(x = Vision_ZScore)) +
+    geom_density(fill = "steelblue", alpha = 0.6) +
+    facet_wrap(~ Error_Type, scales = "free_y") +
+    geom_vline(xintercept = THRESHOLD_Z, linetype = "dashed", color = "red") +
+    theme_classic()
   
-  fn_fac_z <- file.path(
-    "plots", "seurat_downgrade",
-    "04_Vision_ZScore_Facetted_TP_FP_FN_TN.png"
+  faceted_raw <- ggplot(pbmc@meta.data, aes(x = Vision_Raw)) +
+    geom_density(fill = "orange", alpha = 0.6) +
+    facet_wrap(~ Error_Type, scales = "free_y") +
+    theme_classic()
+  
+  ggsave(
+    "plots/benchmarking_vision/04_Vision_ZScore_Facetted_TP_FP_FN_TN.png",
+    faceted_z, width = 10, height = 6, dpi = 300
   )
   
   ggsave(
-    filename = fn_fac_z,
-    plot = faceted_z,
-    width = 10,
-    height = 6,
-    dpi = 300
-  )
-  
-  fn_fac_raw <- file.path(
-    "plots", "seurat_downgrade",
-    "04_Vision_Raw_Facetted_TP_FP_FN_TN.png"
-  )
-  
-  ggsave(
-    filename = fn_fac_raw,
-    plot = faceted_raw,
-    width = 10,
-    height = 6,
-    dpi = 300
+    "plots/benchmarking_vision/04_Vision_Raw_Facetted_TP_FP_FN_TN.png",
+    faceted_raw, width = 10, height = 6, dpi = 300
   )
   
   message("=== Plotting block finished successfully ===")
