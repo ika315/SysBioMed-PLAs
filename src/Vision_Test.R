@@ -10,6 +10,7 @@ library(ggplot2)
 library(SeuratObject)
 
 #options(mc.cores = as.integer(Sys.getenv("SLURM_CPUS_PER_TASK", 1)))
+options(mc.cores = 1)
 
 base_dir <- getwd()
 
@@ -74,7 +75,7 @@ vision_obj <- Vision(
   pbmc,
   assay = "RNA_v3",
   signatures = list(sig_vision),
-  pool = FALSE
+  pool = TRUE
 )
 
 # 4) run vision analysis (autocorrelation, AUC scoring, KNN smoothing)

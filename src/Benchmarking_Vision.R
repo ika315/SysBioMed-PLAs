@@ -11,6 +11,7 @@ library(dplyr)
 library(ggplot2)
 
 #options(mc.cores = as.integer(Sys.getenv("SLURM_CPUS_PER_TASK", 1)))
+options(mc.cores = 1)
 
 PATH_DATA <- "~/SysBioMed-PLAs/data/seu_sx_final.rds"
 DATASET_NAME <- "seu_sx_final"
@@ -41,7 +42,7 @@ vision_obj <- Vision(
   pbmc,
   assay = "RNA_v3",
   signatures = list(sig_vision),
-  pool = FALSE
+  pool = TRUE
 )
 
 vision_obj <- analyze(vision_obj)
