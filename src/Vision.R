@@ -80,7 +80,8 @@ vision_obj <- Vision(
   data = vision_expr,
   signatures = list(sig_vision),
   meta = pbmc@meta.data,
-  pool = TRUE
+  pool = TRUE,
+  filter = "none"
 )
 
 # 4) run vision analysis (autocorrelation, AUC scoring, KNN smoothing)

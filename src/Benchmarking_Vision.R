@@ -33,7 +33,9 @@ pbmc$GT_Response <- ifelse(pbmc[[gt_col_name]] == "B naive", 1, 0)
 
 # --- VISION SCORING ---
 print("--- Berechne Vision Score ---")
+pbmc$celltype.l1 <- factor(pbmc$celltype.l1)
 pbmc$celltype.l2 <- factor(pbmc$celltype.l2)
+pbmc$celltype.l3 <- factor(pbmc$celltype.l3)
 
 pbmc[["RNA_v3"]] <- as(pbmc[["RNA"]], "Assay")
 DefaultAssay(pbmc) <- "RNA_v3"
