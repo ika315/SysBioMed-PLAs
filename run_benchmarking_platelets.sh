@@ -16,5 +16,5 @@ echo "Running on node: $(hostname)"
 echo "CPUs: $SLURM_CPUS_PER_TASK"
 echo "Memory: $SLURM_MEM_PER_NODE MB"
 
-Rscript src/Benchmarking_Vision_MemoryBCells.R
+Rscript src/Benchmarking_Vision_Platelets.R
 
