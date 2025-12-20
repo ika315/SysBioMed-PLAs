@@ -4,4 +4,4 @@
 
 # Data / objects
 *.rds
-.gmt_lists/
+.gmt_lists/results/*.rds
