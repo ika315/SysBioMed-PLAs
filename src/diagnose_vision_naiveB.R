@@ -68,7 +68,7 @@ print(gt_tab)
 print(prop.table(gt_tab))
 
 # ============================================================
-# 3. SIGNATURE COVERAGE & SPARSITY
+# 3. SIGNATURE COVERAGE & SPARSITY (ROBUST VERSION)
 # ============================================================
 # What this tests:
 #   - How many signature genes are present in the dataset
@@ -79,29 +79,44 @@ print(prop.table(gt_tab))
 #   - Most genes expressed in a reasonable fraction of cells
 #
 # If this fails:
-#   - Signature is too sparse or weak for VISION
+#   - Signature is too sparse or mismatched (ID issue)
 # ============================================================
 
-sig_genes <- intersect(
-  rownames(pbmc@assays$RNA_v3),
-  names(pbmc@misc$vision$signatures[[1]]$genes)
-)
+# IMPORTANT: explicitly define which gene list we are testing
+signature_genes <- genes   # or extended_genes if testing extended
+
+expr_genes <- rownames(pbmc@assays$RNA_v3)
+
+sig_genes <- intersect(expr_genes, signature_genes)
 
 message("Number of signature genes found:")
 print(length(sig_genes))
 
-expr_fraction <- rowMeans(pbmc@assays$RNA_v3@counts[sig_genes, ] > 0)
-
-png("diagnostics/03_signature_expression_fraction.png", 800, 600)
-hist(
-  expr_fraction,
-  breaks = 30,
-  main = "Fraction of cells expressing signature genes",
-  xlab = "Fraction of cells"
-)
-dev.off()
-
-summary(expr_fraction)
+if (length(sig_genes) < 5) {
+  warning(
+    paste(
+      "Too few signature genes matched the expression matrix (",
+      length(sig_genes),
+      "). Diagnostics beyond this point may be unreliable."
+    )
+  )
+} else {
+  
+  expr_fraction <- rowMeans(
+    pbmc@assays$RNA_v3@counts[sig_genes, , drop = FALSE] > 0
+  )
+  
+  png("diagnostics/03_signature_expression_fraction.png", 800, 600)
+  hist(
+    expr_fraction,
+    breaks = 30,
+    main = "Fraction of cells expressing signature genes",
+    xlab = "Fraction of cells"
+  )
+  dev.off()
+  
+  print(summary(expr_fraction))
+}
 
 # ============================================================
 # 4. RAW VISION SCORE DISTRIBUTION
