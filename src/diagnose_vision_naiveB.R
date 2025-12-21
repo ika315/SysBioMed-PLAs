@@ -24,6 +24,10 @@ dir.create("diagnostics", showWarnings = FALSE, recursive = TRUE)
 message("=== Loaded PBMC object ===")
 print(pbmc)
 
+path_gene_list = "~/SysBioMed-PLAs/data/updated_gene_list.csv"
+source("~/SysBioMed-PLAs/src/read_and_extend_gene_list.R")
+genes <- read_gene_list(path_gene_list)
+
 # ============================================================
 # 1. BASIC STRUCTURAL SANITY CHECKS
 # ============================================================
