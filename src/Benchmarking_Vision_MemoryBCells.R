@@ -183,33 +183,50 @@ tryCatch({
     
     message(paste("Plotting Vision RAW score for", ann))
     
-    ## ---- UMAP (VISION SCORE) ----
+    ## set identities
+    Idents(pbmc) <- ann
+    
+    ## ---- UMAP ----
     png(
-      filename = file.path("plots", "benchmarking_vision", paste0("Vision_MemoryB_UMAP_", ann, ".png")),
+      filename = file.path(
+        "plots", "benchmarking_vision",
+        paste0("Vision_MemoryB_UMAP_", ann, ".png")
+      ),
       width = 900, height = 700
     )
     
-    print(
-      FeaturePlot(
-        pbmc,
-        features = "Vision_Raw",
-        reduction = "umap",
-        raster = TRUE
+    p <- FeaturePlot(
+      pbmc,
+      features = "Vision_Raw",
+      reduction = "umap",
+      raster = TRUE
+    ) +
+      scale_colour_viridis_c(option = "magma") +
+      labs(
+        title = "VISION Score (Memory B) auf UMAP",
+        subtitle = paste("Annotation:", ann),
+        color = "VISION Score"
       ) +
-        scale_colour_viridis_c(option = "magma") +
-        labs(
-          title = "VISION Score (Memory B) auf UMAP",
-          subtitle = paste("Annotation:", ann),
-          color = "VISION Score"
-        ) +
-        theme_minimal()
+      theme_minimal()
+    
+    print(
+      p + LabelClusters(
+        object = pbmc,
+        id = ann,
+        repel = TRUE,
+        size = 4
+      )
     )
+    
     dev.off()
     
     ## ---- VIOLIN ----
     png(
-      filename = file.path("plots", "benchmarking_vision", paste0("Vision_MemoryB_Violin_", ann, ".png")),
-      width = 1000, height = 600
+      filename = file.path(
+        "plots", "benchmarking_vision",
+        paste0("Vision_MemoryB_Violin_", ann, ".png")
+      ),
+      width = 1200, height = 800
     )
     
     print(
@@ -219,9 +236,10 @@ tryCatch({
         group.by = ann,
         pt.size = 0
       ) +
-        labs(title = paste("VISION Score Verteilung –", ann)) +
+        labs(title = paste("VISION Score Verteilung (B memory) –", ann)) +
         theme(axis.text.x = element_text(angle = 45, hjust = 1))
     )
+    
     dev.off()
   }
   
@@ -243,7 +261,7 @@ tryCatch({
   p_pr <- ggplot(eval_df, aes(x = recall_vec, y = precision_vec)) +
     geom_line(color = "#E41A1C", linewidth = 1.2) +
     labs(
-      title = "Precision–Recall Kurve (VISION)",
+      title = "Precision–Recall Kurve (VISION, B memory)",
       x = "Recall",
       y = "Precision"
     ) +
@@ -264,7 +282,7 @@ tryCatch({
     geom_boxplot(width = 0.1, outlier.shape = NA) +
     geom_hline(yintercept = THRESHOLD_Z, linetype = "dashed", color = "red") +
     labs(
-      title = "VISION Z-Score Verteilung über Zelltypen",
+      title = "VISION Z-Score Verteilung über Zelltypen (B memory)",
       x = "Zelltyp",
       y = "VISION Z-Score"
     ) +
@@ -311,10 +329,6 @@ tryCatch({
     geom_boxplot(outlier.shape = NA) +
     theme_minimal() +
     labs(title = "VISION Z-Score nach Fehlerklassen")
-  
-  png("plots/benchmarking_vision/04_Bench_ErrorTypes_MemoryB.png", 900, 650)
-  print(p_error)
-  dev.off()
   
   png("plots/benchmarking_vision/04_Vision_Bench_ErrorTypes_MemoryB.png", 900, 650)
   print(p_error)

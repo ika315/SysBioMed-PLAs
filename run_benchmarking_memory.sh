@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=VISION_Platelets
+#SBATCH --job-name=VISION_MemoryBCell
 #SBATCH --partition=compms-cpu-big
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
@@ -16,5 +16,5 @@ echo "Running on node: $(hostname)"
 echo "CPUs: $SLURM_CPUS_PER_TASK"
 echo "Memory: $SLURM_MEM_PER_NODE MB"
 
-Rscript src/Benchmarking_Vision_Platelets.R
+Rscript src/Benchmarking_Vision_MemoryBCells.R
 
