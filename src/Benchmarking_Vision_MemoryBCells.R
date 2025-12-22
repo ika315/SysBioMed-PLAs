@@ -209,14 +209,14 @@ tryCatch({
       ) +
       theme_minimal()
     
-    print(
-      p + LabelClusters(
-        object = pbmc,
-        id = ann,
-        repel = TRUE,
-        size = 4
-      )
+    p_labeled <- LabelClusters(
+      plot  = p,
+      id    = ann,
+      repel = TRUE,
+      size  = 4
     )
+    
+    print(p_labeled)
     
     dev.off()
     

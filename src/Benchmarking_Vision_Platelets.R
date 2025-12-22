@@ -59,14 +59,8 @@ pbmc$Vision_ZScore <- as.vector(scale(pbmc$Vision_Raw))
 
 message("=== Extending platelet gene set using VISION scores ===")
 
-# (optional but recommended) restrict background
-pbmc_ext <- subset(
-  pbmc,
-  celltype.l1 %in% c("Platelet", "Myeloid", "Erythroid")
-)
-
 res_ext <- extend_gene_set(
-  pbmc       = pbmc_ext,
+  pbmc       = pbmc,
   base_genes = genes,
   score_name = "Vision_Raw",   # IMPORTANT
   top_n      = 50,
@@ -310,10 +304,14 @@ tryCatch({
         ) +
         theme_minimal()
       
-      print(
-        p_umap +
-          LabelClusters(pbmc, id = ann, repel = TRUE, size = 4)
+      p_labeled <- LabelClusters(
+        plot  = p_umap,
+        id    = ann,
+        repel = TRUE,
+        size  = 4
       )
+      
+      print(p_labeled)
       
       dev.off()
       

@@ -19,7 +19,7 @@ library(Matrix)
 pbmc <- readRDS("results/pbmc_seu_sx_final_Vision_NaiveB.rds")
 DefaultAssay(pbmc) <- "RNA_v3"
 
-dir.create("diagnostics", showWarnings = FALSE, recursive = TRUE)
+dir.create("plots/diagnostics", showWarnings = FALSE, recursive = TRUE)
 
 message("=== Loaded PBMC object ===")
 print(pbmc)
