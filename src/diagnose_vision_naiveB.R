@@ -187,7 +187,7 @@ p_ct <- ggplot(
   labs(title = "VISION Z-score by celltype.l2")
 
 ggsave(
-  file.path(diag_dir, "04_vision_raw_distribution.png"),
+  file.path(diag_dir, "06_vision_zscore_distribution.png"),
   p_ct, width = 10, height = 6
 )
 
@@ -242,7 +242,7 @@ for (v in tech_vars) {
     labs(title = paste("VISION raw vs", v))
   
   ggsave(
-    file.path(diag_dir, paste0("diagnostics/08_vision_vs_", v, ".png")),
+    file.path(diag_dir, paste0("08_vision_vs_", v, ".png")),
     p, width = 6, height = 5
   )
 }
@@ -299,7 +299,7 @@ p_B <- ggplot(
   labs(title = "VISION Z-score within B cells only")
 
 ggsave(
-  "file.path(diag_dir, "diagnostics/10_zscore_Bcells_only.png"),
+  file.path(diag_dir, "10_zscore_Bcells_only.png"),
   p_B, width = 8, height = 5
 )
 
