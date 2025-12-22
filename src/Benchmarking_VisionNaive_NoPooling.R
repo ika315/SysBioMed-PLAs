@@ -2,6 +2,7 @@
 # 04_Benchmarking.R
 # Benchmarking von PLA-Methoden anhand B naive-Zell Signatur
 # Für Vision
+# Ohne Pooling
 # -------------------------------------------------------------------
 
 library(Seurat)
@@ -57,7 +58,30 @@ score_name <- "Vision_Naive_B_Cell_Signature"
 pbmc$Vision_Raw <- as.numeric(vision_scores)
 pbmc$Vision_ZScore <- as.vector(scale(pbmc$Vision_Raw))
 
-THRESHOLD_Z <- 1.5
+## ------------------------------------------------
+## AUTOMATIC Z-SCORE THRESHOLD (ROC / YOUDEN)
+## ------------------------------------------------
+
+roc_obj <- roc(
+  response  = pbmc$GT_Response,
+  predictor = pbmc$Vision_ZScore,
+  direction = "<",          # higher score = more likely positive
+  quiet     = TRUE
+)
+
+best_coords <- coords(
+  roc_obj,
+  x = "best",
+  best.method = "youden"
+)
+
+THRESHOLD_Z <- as.numeric(best_coords["threshold"])
+
+message(sprintf(
+  "Automatic ROC-based Z threshold (Youden): %.3f",
+  THRESHOLD_Z
+))
+
 
 pbmc$Prediction <- ifelse(pbmc$Vision_ZScore > THRESHOLD_Z, "Positive", "Negative")
 pbmc$GT_Class <- ifelse(pbmc$GT_Response == 1, "Positive", "Negative")
@@ -113,7 +137,7 @@ dir.create("results", recursive = TRUE, showWarnings = FALSE)
 
 pbmc_out_path <- file.path(
   "results",
-  paste0("pbmc_", DATASET_NAME, "_Vision_NaiveB.rds")
+  paste0("pbmc_", DATASET_NAME, "_Vision_NaiveB_NoPooling.rds")
 )
 
 saveRDS(pbmc, pbmc_out_path)
@@ -144,7 +168,7 @@ tryCatch({
     }
     
     png(
-      filename = file.path("plots", "benchmarking_vision", paste0("04_Reference_UMAP_NaiveB_", ann, ".png")),
+      filename = file.path("plots", "benchmarking_vision", paste0("04_Reference_UMAP_NaiveB_NoPooling_", ann, ".png")),
       width = 1200,
       height = 800
     )
@@ -190,7 +214,7 @@ tryCatch({
     png(
       filename = file.path(
         "plots", "benchmarking_vision",
-        paste0("Vision_NaiveB_UMAP_", ann, ".png")
+        paste0("Vision_NaiveB_NoPooling_UMAP_", ann, ".png")
       ),
       width = 900, height = 700
     )
@@ -203,7 +227,7 @@ tryCatch({
     ) +
       scale_colour_viridis_c(option = "magma") +
       labs(
-        title = "VISION Score (Naive B) auf UMAP",
+        title = "VISION Score (B Naive, No Pooling) auf UMAP",
         subtitle = paste("Annotation:", ann),
         color = "VISION Score"
       ) +
@@ -224,7 +248,7 @@ tryCatch({
     png(
       filename = file.path(
         "plots", "benchmarking_vision",
-        paste0("Vision_NaiveB_Violin_", ann, ".png")
+        paste0("Vision_NaiveB_NoPooling_Violin_", ann, ".png")
       ),
       width = 1200, height = 800
     )
@@ -236,7 +260,7 @@ tryCatch({
         group.by = ann,
         pt.size = 0
       ) +
-        labs(title = paste("VISION Score Verteilung (B Naive) –", ann)) +
+        labs(title = paste("VISION Score Verteilung (B Naive, No Pooling) –", ann)) +
         theme(axis.text.x = element_text(angle = 45, hjust = 1))
     )
     
@@ -261,14 +285,41 @@ tryCatch({
   p_pr <- ggplot(eval_df, aes(x = recall_vec, y = precision_vec)) +
     geom_line(color = "#E41A1C", linewidth = 1.2) +
     labs(
-      title = "Precision–Recall Kurve (VISION, B Naive)",
+      title = "Precision–Recall Kurve (VISION, B Naive, No Pooling)",
       x = "Recall",
       y = "Precision"
     ) +
     theme_minimal()
   
-  png("plots/benchmarking_vision/Vision_NaiveB_PrecisionRecall_Curve.png", 800, 700)
+  png("plots/benchmarking_vision/Vision_NaiveB_NoPooling_PrecisionRecall_Curve.png", 800, 700)
   print(p_pr)
+  dev.off()
+  
+  ## ------------------------------------------------
+  ## RAW SCORE DISTRIBUTION (GT)
+  ## ------------------------------------------------
+  p_raw_dist <- ggplot(
+    pbmc@meta.data,
+    aes(x = .data[[gt_col_name]], y = Vision_Raw, fill = .data[[gt_col_name]])
+  ) +
+    geom_violin(alpha = 0.7) +
+    geom_boxplot(width = 0.1, outlier.shape = NA) +
+    labs(
+      title = "VISION Raw Score Verteilung über Zelltypen (B Naive, No Pooling)",
+      x = "Zelltyp",
+      y = "VISION Raw Score"
+    ) +
+    theme_minimal() +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1),
+      legend.position = "none"
+    )
+  
+  png(
+    "plots/benchmarking_vision/Vision_NaiveB_NoPooling_Raw_Distribution.png",
+    width = 1500, height = 800
+  )
+  print(p_raw_dist)
   dev.off()
   
   ## ------------------------------------------------
@@ -282,7 +333,7 @@ tryCatch({
     geom_boxplot(width = 0.1, outlier.shape = NA) +
     geom_hline(yintercept = THRESHOLD_Z, linetype = "dashed", color = "red") +
     labs(
-      title = "VISION Z-Score Verteilung über Zelltypen (B Naive)",
+      title = "VISION Z-Score Verteilung über Zelltypen (B Naive, No Pooling)",
       x = "Zelltyp",
       y = "VISION Z-Score"
     ) +
@@ -290,7 +341,7 @@ tryCatch({
     theme(axis.text.x = element_text(angle = 45, hjust = 1),
           legend.position = "none")
   
-  png("plots/benchmarking_vision/Vision_NaiveB_ZScore_Distribution.png", 1500, 800)
+  png("plots/benchmarking_vision/Vision_NaiveB_NoPooling_ZScore_Distribution.png", 1500, 800)
   print(p_z)
   dev.off()
   
@@ -315,7 +366,7 @@ tryCatch({
     geom_hline(yintercept = THRESHOLD_Z, linetype = "dashed", color = "red") +
     theme_minimal()
   
-  png("plots/benchmarking_vision/Vision_NaiveB_ZScore_3Groups.png", 800, 600)
+  png("plots/benchmarking_vision/Vision_NaiveB_NoPooling_ZScore_3Groups.png", 800, 600)
   print(p_z3)
   dev.off()
   
@@ -330,7 +381,7 @@ tryCatch({
     theme_minimal() +
     labs(title = "VISION Z-Score nach Fehlerklassen")
   
-  png("plots/benchmarking_vision/04_Vision_Bench_ErrorTypes_NaiveB.png", 900, 650)
+  png("plots/benchmarking_vision/04_Vision_Bench_ErrorTypes_NaiveB_NoPooling.png", 900, 650)
   print(p_error)
   dev.off()
   
@@ -349,12 +400,12 @@ tryCatch({
     theme_classic()
   
   ggsave(
-    "plots/benchmarking_vision/04_Vision_ZScore_NaiveB_Facetted_TP_FP_FN_TN.png",
+    "plots/benchmarking_vision/04_Vision_ZScore_NaiveB_NoPooling_Facetted_TP_FP_FN_TN.png",
     faceted_z, width = 10, height = 6, dpi = 300
   )
   
   ggsave(
-    "plots/benchmarking_vision/04_Vision_Raw_NaiveB_Facetted_TP_FP_FN_TN.png",
+    "plots/benchmarking_vision/04_Vision_Raw_NaiveB_NoPooling_Facetted_TP_FP_FN_TN.png",
     faceted_raw, width = 10, height = 6, dpi = 300
   )
   
