@@ -64,12 +64,29 @@ print(DimPlot(pbmc, group.by = "Error_Type", reduction = "umap", raster = TRUE) 
     labs(title = paste(METHOD, "Error Mapping"), subtitle = paste("Threshold Z =", round(THRESHOLD_Z,2))))
 dev.off()
 
-# 4. ROC
+# 4. Facetted Density (Z-Score) - FEHLTE VORHER
+png(filename = paste0("plots/", METHOD, "_ZScore_Facetted_Errors.png"), width = 10, height = 6, units="in", res=300)
+print(ggplot(pbmc@meta.data, aes(x = Z_Score)) + 
+    geom_density(fill = "steelblue", alpha = 0.6) +
+    facet_wrap(~ Error_Type, scales = "free_y") + 
+    geom_vline(xintercept = THRESHOLD_Z, linetype = "dashed", color = "red") +
+    theme_classic() + labs(title = paste(METHOD, "Z-Score by Error Class"), subtitle = paste("Threshold Z =", round(THRESHOLD_Z, 2))))
+dev.off()
+
+# 5. Facetted Density (Raw Score) - FEHLTE VORHER
+png(filename = paste0("plots/", METHOD, "_Raw_Facetted_Errors.png"), width = 10, height = 6, units="in", res=300)
+print(ggplot(pbmc@meta.data, aes(x = Raw_Score)) + 
+    geom_density(fill = "orange", alpha = 0.6) +
+    facet_wrap(~ Error_Type, scales = "free_y") + 
+    theme_classic() + labs(title = paste(METHOD, "Raw Score by Error Class")))
+dev.off()
+
+# 6. ROC
 png(filename = paste0("plots/", METHOD, "_Bmemory_ROC.png"), width = 700, height = 700)
 plot(roc_obj, col="#E41A1C", lwd=3, main=paste(METHOD, "ROC (AUC:", round(auc(roc_obj),3), ")"))
 dev.off()
 
-# 5. PR Kurve
+# 7. PR Kurve
 eval_df <- data.frame(score = pbmc$Z_Score, gt = pbmc$GT_Response) %>% arrange(desc(score)) %>%
     mutate(tp_cum = cumsum(gt), fp_cum = cumsum(1 - gt),
            precision_vec = tp_cum / (tp_cum + fp_cum), recall_vec = tp_cum / sum(gt))
@@ -79,7 +96,7 @@ print(ggplot(eval_df, aes(x = recall_vec, y = precision_vec)) + geom_line(color 
     labs(title = paste(METHOD, "PR Curve")) + theme_minimal())
 dev.off()
 
-# 6. Z-Score 3 Groups
+# 8. Z-Score 3 Groups
 pbmc$ZScore_Groups <- factor(case_when(
     pbmc$celltype.l2 == "B memory" ~ "B memory", pbmc$celltype.l1 == "B" ~ "Rest B-cells", TRUE ~ "Other"
 ), levels = c("B memory", "Rest B-cells", "Other"))
