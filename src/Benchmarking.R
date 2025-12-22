@@ -102,9 +102,9 @@ p_umap_raw <- FeaturePlot(pbmc, features = "AUCell_Raw", reduction = "umap",
 dev.off()
 
 # --- Violin: AUCell Raw Scores ---
-png(filename = "plots/AUCell_Bmemory_Violin_l1.png", width = 1000, height = 600)
-p_l1 <- VlnPlot(pbmc, features = "AUCell_Raw", group.by = "celltype.l1", pt.size = 0) +
-    labs(title = "AUCell Score Verteilung über Haupt-Zelllinien (l1)") +
+png(filename = "plots/AUCell_Bmemory_Violin_l2.png", width = 1000, height = 600)
+p_l1 <- VlnPlot(pbmc, features = "AUCell_Raw", group.by = "celltype.l2", pt.size = 0) +
+    labs(title = "AUCell Score Verteilung über Haupt-Zelllinien (l2)") +
     theme(axis.text.x = element_text(angle = 45, hjust = 1))
 print(p_l1)
 dev.off()
