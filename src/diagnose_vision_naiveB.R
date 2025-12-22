@@ -19,9 +19,10 @@ library(Matrix)
 pbmc <- readRDS("results/pbmc_seu_sx_final_Vision_NaiveB.rds")
 DefaultAssay(pbmc) <- "RNA_v3"
 
-dir.create("plots/diagnostics", showWarnings = FALSE, recursive = TRUE)
+diag_dir <- file.path("plots", "diagnostics")
+dir.create(diag_dir, recursive = TRUE, showWarnings = FALSE)
 
-message("=== Loaded PBMC object ===")
+print("=== Loaded PBMC object ===")
 print(pbmc)
 
 path_gene_list = "~/SysBioMed-PLAs/data/updated_gene_list.csv"
@@ -50,7 +51,7 @@ required_cols <- c(
 )
 
 missing_cols <- setdiff(required_cols, colnames(pbmc@meta.data))
-message("Missing metadata columns:")
+print("Missing metadata columns:")
 print(missing_cols)
 
 # ============================================================
@@ -93,7 +94,7 @@ expr_genes <- rownames(pbmc@assays$RNA_v3)
 
 sig_genes <- intersect(expr_genes, signature_genes)
 
-message("Number of signature genes found:")
+print("Number of signature genes found:")
 print(length(sig_genes))
 
 if (length(sig_genes) < 5) {
@@ -110,7 +111,7 @@ if (length(sig_genes) < 5) {
     pbmc@assays$RNA_v3@counts[sig_genes, , drop = FALSE] > 0
   )
   
-  png("diagnostics/03_signature_expression_fraction.png", 800, 600)
+  png(file.path(diag_dir, "03_signature_expression_fraction.png"), 800, 600)
   hist(
     expr_fraction,
     breaks = 30,
@@ -142,7 +143,7 @@ p_raw <- ggplot(pbmc@meta.data, aes(Vision_Raw)) +
   labs(title = "VISION raw score distribution")
 
 ggsave(
-  "diagnostics/04_vision_raw_distribution.png",
+  file.path(diag_dir, "04_vision_raw_distribution.png"),
   p_raw, width = 7, height = 5
 )
 
@@ -186,7 +187,7 @@ p_ct <- ggplot(
   labs(title = "VISION Z-score by celltype.l2")
 
 ggsave(
-  "diagnostics/06_zscore_by_celltype_l2.png",
+  file.path(diag_dir, "04_vision_raw_distribution.png"),
   p_ct, width = 10, height = 6
 )
 
@@ -213,9 +214,10 @@ p_err <- ggplot(
   labs(title = "VISION Z-score by error type")
 
 ggsave(
-  "diagnostics/07_zscore_by_error_type.png",
+  file.path(diag_dir, "07_zscore_by_error_type.png"),
   p_err, width = 8, height = 6
 )
+
 
 # ============================================================
 # 8. TECHNICAL COVARIATE CORRELATIONS
@@ -240,10 +242,14 @@ for (v in tech_vars) {
     labs(title = paste("VISION raw vs", v))
   
   ggsave(
-    paste0("diagnostics/08_vision_vs_", v, ".png"),
+    file.path(diag_dir, paste0("diagnostics/08_vision_vs_", v, ".png")),
     p, width = 6, height = 5
   )
 }
+
+
+
+
 
 # ============================================================
 # 9. BASELINE COMPARISON: MEAN EXPRESSION SCORE
@@ -268,7 +274,7 @@ cor_vision_mean <- cor(
   use = "complete.obs"
 )
 
-message("Correlation Vision vs mean expression:")
+print("Correlation Vision vs mean expression:")
 print(cor_vision_mean)
 
 # ============================================================
@@ -293,8 +299,8 @@ p_B <- ggplot(
   labs(title = "VISION Z-score within B cells only")
 
 ggsave(
-  "diagnostics/10_zscore_Bcells_only.png",
+  "file.path(diag_dir, "diagnostics/10_zscore_Bcells_only.png"),
   p_B, width = 8, height = 5
 )
 
-message("=== VISION diagnostics completed ===")
+print("=== VISION diagnostics completed ===")
