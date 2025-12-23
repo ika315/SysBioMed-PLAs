@@ -211,7 +211,7 @@ tryCatch({
     
     p_labeled <- LabelClusters(
       plot  = p,
-      id    = ann,
+      id    = "ident",
       repel = TRUE,
       size  = 4
     )
