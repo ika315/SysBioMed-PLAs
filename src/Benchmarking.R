@@ -30,19 +30,53 @@ base_dir <- getwd()
 source(file.path(base_dir, "src","read_and_extend_gene_list.R"))
 gene_csv <- file.path(base_dir, "data", "updated_gene_list.csv")
 genes <- read_gene_list(gene_csv)
-sig_other <- make_signature(genes, "Platelet_Signature", "other")
-platelet_genes <- sig_other$Platelet_Signature
-gene_set <- list(Platelet_Score = platelet_genes)
+
+#sig_other <- make_signature(genes, "Platelet_Signature", "other")
+#platelet_genes <- sig_other$Platelet_Signature
+#gene_set <- list(Platelet_Score = platelet_genes)
 
 pbmc$GT_Response <- ifelse(pbmc$celltype.l2 == "Platelet", 1, 0)
 
-# --- AUCELL SCORING ---
-print("--- Berechne AUCell Score ---")
+print("--- Berechne AUCell (Original) für Gen-Erweiterung ---")
 expression_matrix <- GetAssayData(pbmc, layer = "data")
-cells_rankings <- AUCell::AUCell_buildRankings(expression_matrix, plotStats=FALSE)
-cells_AUC <- AUCell::AUCell_calcAUC(gene_set, cells_rankings)
+rankings <- AUCell_buildRankings(expression_matrix, plotStats=FALSE)
 
-pbmc$AUCell_Raw <- as.numeric(AUCell::getAUC(cells_AUC)[1, ])
+orig_set <- list(Platelet_Orig = genes)
+auc_orig <- AUCell_calcAUC(orig_set, rankings)
+pbmc$AUCell_Raw_Original <- as.numeric(getAUC(auc_orig)[1, ])
+
+# Gen-Set Erweiterung
+message("=== Erweitere Platelet-Gen-Set basierend auf AUCell Scores ===")
+res_ext <- extend_gene_set(
+  pbmc          = pbmc,
+  base_genes    = genes,
+  score_name    = "AUCell_Raw_Original", 
+  top_n         = 50,
+  high_quantile = 0.9,
+  min.pct       = 0.05,
+  test.use      = "wilcox"
+)
+
+extended_genes <- res_ext$extended_genes
+gene_set_extended <- list(Platelet_Score = extended_genes)
+
+if (!dir.exists("results")) dir.create("results")
+
+# Speichern
+write.csv( 
+  data.frame(geneName = extended_genes), 
+  "results/extended_platelet_gene_list.csv", 
+  row.names = FALSE, 
+  quote = FALSE 
+)
+
+print(paste("Originale Gene:", length(genes)))
+print(paste("Erweiterte Gene:", length(extended_genes)))
+
+# Finaler AUCell Score
+print("--- Berechne finales AUCell Scoring (Extended) ---")
+cells_AUC <- AUCell_calcAUC(gene_set_extended, rankings)
+pbmc$AUCell_Raw <- as.numeric(getAUC(cells_AUC)[1, ])
 
 # Z-Score berechnen
 print("Berechne Z-Score für AUCell...")
