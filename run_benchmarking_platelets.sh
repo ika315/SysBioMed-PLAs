@@ -5,7 +5,7 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=100000
-#SBATCH --time=15:00:00
+#SBATCH --time=30:00:00
 #SBATCH --output=/nfs/home/students/i.kaciran/SysBioMed-PLAs/slurm_logs/vision_%j.out
 #SBATCH --error=/nfs/home/students/i.kaciran/SysBioMed-PLAs/slurm_logs/vision_%j.err
 
