@@ -161,7 +161,8 @@ dev.off()
 png(filename = paste0(OUT_DIR, METHOD_NAME, "_", TARGET_LABEL, "_Error_UMAP.png"), width = 1000, height = 800)
 print(DimPlot(pbmc, group.by = "Error_Type", reduction = "umap") +
     scale_color_manual(values = c("TP"="#228B22", "FP"="#FF4500", "FN"="#1E90FF", "TN"="#D3D3D3")) +
-    labs(title = paste(METHOD_NAME, "Error Mapping:", TARGET_LABEL)), subtitle = paste("Threshold Z =", THRESHOLD_Z))
+    labs(title = paste(METHOD_NAME, "Error Mapping:", TARGET_LABEL), subtitle = paste("Threshold Z =", THRESHOLD_Z))+
+    theme_minimal())
 dev.off()
 
 # --- Error Class Density Distribution ---
@@ -240,7 +241,7 @@ print(VlnPlot(pbmc, features = "Z_Score", group.by = GT_COLUMN, pt.size = 0.1) +
 dev.off()
 
 # --- Violin: Z-Score Verteilung über detaillierten Zelltypen ---
-print(paste("--- Erstelle detaillierte Z-Score Verteilung für", METHOD, "---"))
+print(paste("--- Erstelle detaillierte Z-Score Verteilung für", METHOD_NAME, "---"))
 png(filename = paste0(OUT_DIR, METHOD_NAME, "_", TARGET_LABEL, "_ZScore_Distribution.png"), width = 1500, height = 800)
 
 p_z <- ggplot(pbmc@meta.data, aes(x = celltype_clean, y = Z_Score, fill = celltype_clean)) +

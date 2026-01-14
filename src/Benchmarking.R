@@ -88,7 +88,7 @@ gene_set_extended <- list(Platelet_Score = extended_genes)
 if (!dir.exists("results")) dir.create("results")
 write.csv( 
   data.frame(geneName = extended_genes), 
-  "results/extended_platelet_gene_list.csv", 
+  "results/extended_platelet_gene_list_AUCell.csv", 
   row.names = FALSE, 
   quote = FALSE 
 )
@@ -209,7 +209,8 @@ dev.off()
 png(filename = paste0(OUT_DIR, METHOD_NAME, "_", TARGET_LABEL, "_Error_UMAP.png"), width = 1000, height = 800)
 print(DimPlot(pbmc, group.by = "Error_Type", reduction = "umap") +
     scale_color_manual(values = c("TP"="#228B22", "FP"="#FF4500", "FN"="#1E90FF", "TN"="#D3D3D3")) +
-    labs(title = paste(METHOD_NAME, "Error Mapping:", TARGET_LABEL)), subtitle = paste("Threshold Z =", THRESHOLD_Z))
+    labs(title = paste(METHOD_NAME, "Error Mapping:", TARGET_LABEL), subtitle = paste("Threshold Z =", THRESHOLD_Z))+
+    theme_minimal())
 dev.off()
 
 # --- Error Class Density Distribution ---
