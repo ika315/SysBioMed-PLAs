@@ -142,7 +142,7 @@ png(filename = plot_path_split, width = 1400, height = 700)
 p_split <- VlnPlot(pbmc,
                    features = "Raw_Score",
                    group.by = "celltype_clean",
-                   split.by = "pla-status",
+                   split.by = GT_COLUMN,
                    pt.size = 0) +
     scale_fill_manual(values = c("PLA" = "#FF4B4B", "platelet-free" = "#4B8BFF")) +
     labs(title = paste(METHOD_NAME, "Score: PLA vs. Platelet-free"),
