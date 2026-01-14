@@ -10,11 +10,10 @@
 source /opt/mambaforge/etc/profile.d/conda.sh
 conda activate pla
 
-echo "Starte R-Skript: Benchmarking_UCell.R"
+echo "Starte R-Skript: Benchmarking.R mit platelet signature"
 echo "Verwende Umgebung: $CONDA_DEFAULT_ENV"
 
 # Ausführen des R-Skripts mit dem korrekten Rscript-Pfad aus dem Conda-Environment
-$(which Rscript) src/Benchmarking_UCell.R
+$(which Rscript) src/Benchmarking.R
 
 echo "Job Benchmakring beendet."
-
