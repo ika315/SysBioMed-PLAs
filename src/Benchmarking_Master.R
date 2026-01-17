@@ -187,9 +187,13 @@ eval_df <- data.frame(score = pbmc$Z_Score, gt = pbmc$GT_Response) %>%
            precision_vec = tp_cum / (tp_cum + fp_cum), recall_vec = tp_cum / sum(gt))
 
 # Calculate current metrics for annotation
-cm <- table(Predicted = pbmc$Prediction, Actual = pbmc$GT_Class)
-Prec_Val <- cm["Positive", "Positive"] / sum(cm["Positive", ])
-Rec_Val  <- cm["Positive", "Positive"] / sum(cm[, "Positive"])
+tp <- sum(pbmc$Error_Type == "TP")
+fp <- sum(pbmc$Error_Type == "FP")
+fn <- sum(pbmc$Error_Type == "FN")
+
+Prec_Val <- tp / (tp + fp)
+Rec_Val <- tp / (tp + fn)
+F1_Score <- 2 * Prec_Val * Rec_Val / (Prec_Val + Rec_Val)
 
 png(filename = paste0(OUT_DIR, METHOD_NAME, "_PR_Curve.png"), width = 800, height = 700)
 print(ggplot(eval_df, aes(x = recall_vec, y = precision_vec)) +

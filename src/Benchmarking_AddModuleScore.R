@@ -235,7 +235,7 @@ dev.off()
 
 # Violin Plot (Über die gegateten Klassen)
 png(filename = paste0(OUT_DIR, METHOD_NAME, "_", TARGET_LABEL, "_Violin_GT.png"), width = 800, height = 600)
-print(VlnPlot(pbmc, features = "Z_Score", group.by = GT_COLUMN, pt.size = 0.1) +
+print(VlnPlot(pbmc, features = "Z_Score", group.by = GT_COLUMN, pt.size = 0) +
     geom_hline(yintercept = THRESHOLD_Z, linetype = "dashed", color = "red") +
     labs(title = paste("Z-Score Verteilung nach", TARGET_LABEL)))
 dev.off()
