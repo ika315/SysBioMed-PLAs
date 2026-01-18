@@ -11,3 +11,4 @@
 
 *.rds
 *.csv
+.Rproj.user
