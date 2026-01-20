@@ -30,7 +30,7 @@ pbmc <- subset(pbmc, cells = common_cells)
 pbmc <- AddMetaData(pbmc, metadata = new_metadata[common_cells, ])
 
 # Define Output Directory
-OUT_DIR <- paste0("plots/Platelet_Main/", METHOD_NAME, "/")
+OUT_DIR <- paste0("plots/Platelet_Main/", METHOD_NAME, "_test", "/")
 if (!dir.exists(OUT_DIR)) dir.create(OUT_DIR, recursive = TRUE)
 if (!dir.exists("results")) dir.create("results")
 
@@ -59,7 +59,6 @@ if (METHOD_NAME == "AUCell" || METHOD_NAME == "WeightedAUCell") {
     pbmc <- AddModuleScore_UCell(pbmc, features = list(Platelet_Orig = genes), name = NULL)
     pbmc$Raw_Score_Original <- pbmc$Platelet_Orig
 } else if (METHOD_NAME == "AddModuleScore") {> cor(pbmc$Raw_Score_Original, pbmc$Raw_Score, use = "complete.obs")
-[1] 0.7547992
     pbmc <- AddModuleScore(pbmc, features = list(genes), name = "AMS_Orig")
     pbmc$Raw_Score_Original <- pbmc$AMS_Orig1
 }
@@ -77,18 +76,25 @@ write.csv(data.frame(geneName = extended_genes),
 if(METHOD_NAME == "WeightedAUCell") {
     expression_matrix <- GetAssayData(pbmc, layer = "data")
 
-    # Build a full boost vector for all genes (default 1)
+    genes_in_data <- intersect(genes, rownames(expression_matrix))
+    expr_subset <- expression_matrix[genes_in_data, , drop = FALSE]
+
+    genes_auc <- sapply(rownames(expr_subset), function(g) {
+        a <- as.numeric(pROC::roc(pbmc$GT_Response, expr_subset[g, ], quiet = TRUE)$auc)
+        max(a, 1 - a)
+    })
+    names(genes_auc) <- rownames(expr_subset)
+
     boost_full <- setNames(rep(1, nrow(expression_matrix)), rownames(expression_matrix))
 
-    # Update weights only for the genes you scored by ROC AUC
     known_auc <- genes_auc[intersect(names(genes_auc), names(boost_full))]
     boost_full[names(known_auc)] <- pmax(0.1, as.numeric(known_auc)^3)
 
-    # Row-wise scaling (robust and explicit)
     weight_matrix <- sweep(expression_matrix, 1, boost_full[rownames(expression_matrix)], `*`)
 
     rankings_weighted <- AUCell_buildRankings(weight_matrix, plotStats = FALSE)
 
+    final_genes <- unique(c(genes_in_data, extended_genes))
     final_genes <- intersect(final_genes, rownames(rankings_weighted))
 
     auc_final <- AUCell_calcAUC(
