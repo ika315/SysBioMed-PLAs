@@ -13,7 +13,7 @@ library(ggplot2)
 
 # Configuration
 # Options: "AUCell", "UCell", "AddModuleScore"
-METHOD_NAME  <- "AddModuleScore" 
+METHOD_NAME  <- "WeightedAUCell" 
 TARGET_LABEL <- "PLA_Gating"
 GT_COLUMN    <- "pla.status"
 POSITIVE_VAL <- "PLA"
@@ -41,11 +41,16 @@ genes <- read_gene_list(file.path(base_dir, "data", "updated_gene_list.csv"))
 
 pbmc$GT_Response <- ifelse(pbmc[[GT_COLUMN]] == POSITIVE_VAL, 1, 0)
 pbmc$GT_Class    <- ifelse(pbmc$GT_Response == 1, "Positive", "Negative")
+ 
+# Grid Search
+#source(file.path(base_dir, "src", "Grid_Search.R"))
+#cell_rankings <- AUCell_buildRankings(GetAssayData(pbmc, layer = "data"), plotStats=FALSE)
+# grid_search(pbmc, genes, cell_rankings)
 
 # Scoring Logic
 print(paste("--- Calculating Scores using", METHOD_NAME, "---"))
 
-if (METHOD_NAME == "AUCell") {
+if (METHOD_NAME == "AUCell" || METHOD_NAME == "WeightedAUCell") {
     expression_matrix <- GetAssayData(pbmc, layer = "data")
     rankings <- AUCell_buildRankings(expression_matrix, plotStats=FALSE)
     auc_orig <- AUCell_calcAUC(list(Platelet_Orig = genes), rankings)
@@ -53,7 +58,8 @@ if (METHOD_NAME == "AUCell") {
 } else if (METHOD_NAME == "UCell") {
     pbmc <- AddModuleScore_UCell(pbmc, features = list(Platelet_Orig = genes), name = NULL)
     pbmc$Raw_Score_Original <- pbmc$Platelet_Orig
-} else if (METHOD_NAME == "AddModuleScore") {
+} else if (METHOD_NAME == "AddModuleScore") {> cor(pbmc$Raw_Score_Original, pbmc$Raw_Score, use = "complete.obs")
+[1] 0.7547992
     pbmc <- AddModuleScore(pbmc, features = list(genes), name = "AMS_Orig")
     pbmc$Raw_Score_Original <- pbmc$AMS_Orig1
 }
@@ -68,7 +74,31 @@ write.csv(data.frame(geneName = extended_genes),
           paste0("results/extended_platelet_gene_list_", METHOD_NAME, ".csv"), row.names = FALSE)
 
 # Final Scoring
-if (METHOD_NAME == "AUCell") {
+if(METHOD_NAME == "WeightedAUCell") {
+    expression_matrix <- GetAssayData(pbmc, layer = "data")
+
+    # Build a full boost vector for all genes (default 1)
+    boost_full <- setNames(rep(1, nrow(expression_matrix)), rownames(expression_matrix))
+
+    # Update weights only for the genes you scored by ROC AUC
+    known_auc <- genes_auc[intersect(names(genes_auc), names(boost_full))]
+    boost_full[names(known_auc)] <- pmax(0.1, as.numeric(known_auc)^3)
+
+    # Row-wise scaling (robust and explicit)
+    weight_matrix <- sweep(expression_matrix, 1, boost_full[rownames(expression_matrix)], `*`)
+
+    rankings_weighted <- AUCell_buildRankings(weight_matrix, plotStats = FALSE)
+
+    final_genes <- intersect(final_genes, rownames(rankings_weighted))
+
+    auc_final <- AUCell_calcAUC(
+        list(Platelet_Score = final_genes),
+        rankings_weighted,
+        aucMaxRank = ceiling(0.05 * nrow(rankings_weighted))
+    )
+
+    pbmc$Raw_Score <- as.numeric(getAUC(auc_final)[1, ])
+}else if (METHOD_NAME == "AUCell") {
     auc_final <- AUCell_calcAUC(list(Platelet_Score = extended_genes), rankings)
     pbmc$Raw_Score <- as.numeric(getAUC(auc_final)[1, ])
 } else if (METHOD_NAME == "UCell") {
@@ -127,7 +157,7 @@ print(DimPlot(pbmc, group.by = "Error_Type", reduction = "umap", raster = TRUE) 
 dev.off()
 
 # --- Violin: Raw Scores ---
-png(filename = paste0(OUT_DIR, METHOD_NAME, "_Violin_Celltypes.png"), width = 1200, height = 600)
+png(filename = paste0(OUT_DIR, METHOD_NAME, "_Violin_Celltypes.png"), width = 1200, height = 600)res_ext
 p_vln_clean <- VlnPlot(pbmc, 
                        features = "Raw_Score", 
                        group.by = "celltype_clean", 
@@ -234,3 +264,4 @@ performance_data <- data.frame(
 write.csv(performance_data, 
           file = paste0("results/metrics_", METHOD_NAME, ".csv"), 
           row.names = FALSE)
+
