@@ -30,7 +30,7 @@ pbmc <- subset(pbmc, cells = common_cells)
 pbmc <- AddMetaData(pbmc, metadata = new_metadata[common_cells, ])
 
 # Define Output Directory
-OUT_DIR <- paste0("plots/Platelet_Main/", METHOD_NAME, "_test", "/")
+OUT_DIR <- paste0("plots/Platelet_Main/", METHOD_NAME, "/")
 if (!dir.exists(OUT_DIR)) dir.create(OUT_DIR, recursive = TRUE)
 if (!dir.exists("results")) dir.create("results")
 
