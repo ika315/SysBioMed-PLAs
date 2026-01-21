@@ -9,13 +9,13 @@ library(UCell)
 library(pROC)
 library(dplyr)
 library(ggplot2)
-
+library(pheatmap)
 
 # Configuration
 # Options: "AUCell", "UCell", "AddModuleScore"
 METHOD_NAME  <- "AddModuleScore"
-SIG_NAME     <- "HP_ABNORMAL"
-SIGNATURE    <- "HP_ABNORMAL_PLATELET_MEMBRANE_PROTEIN_EXPRESSION"
+SIG_NAME     <- "MANNE_COVID19_DN"
+SIGNATURE    <- "MANNE_COVID19_COMBINED_COHORT_VS_HEALTHY_DONOR_PLATELETS_DN"
 TARGET_LABEL <- "PLA_Gating"
 GT_COLUMN    <- "pla.status"
 POSITIVE_VAL <- "PLA"
@@ -259,6 +259,50 @@ print(ggplot(pbmc@meta.data, aes(x = celltype_clean, y = Z_Score, fill = celltyp
 dev.off()
 
 print(paste("Done! All plots saved to:", OUT_DIR))
+
+# --- Heatmap: TP vs. FP Signature Gene Expression ---
+
+genes_to_show <- head(intersect(extended_genes, rownames(pbmc)), 30)
+cells_subset <- subset(pbmc, subset = Error_Type %in% c("TP", "FP"))
+
+if(length(genes_to_show) > 0 && ncol(cells_subset) > 0) {
+    avg_exp <- AverageExpression(cells_subset, 
+                                 features = genes_to_show, 
+                                 group.by = "Error_Type", 
+                                 layer = "data")$RNA
+
+    png(filename = paste0(OUT_DIR, SIG_NAME, "_", METHOD_NAME, "_Heatmap_TP_vs_FP.png"), width = 800, height = 1000)
+    pheatmap(avg_exp, 
+             scale = "row", 
+             clustering_distance_cols = "euclidean",
+             main = paste("Gene Profile: TP vs FP (", SIG_NAME, ")"),
+             color = colorRampPalette(c("blue", "white", "red"))(100))
+    dev.off()
+}
+
+# --- Plot: FP Count per Cell Type ---
+
+fp_data <- pbmc@meta.data %>%
+    filter(Error_Type == "FP") %>%
+    group_by(celltype_clean) %>%
+    tally() %>%
+    arrange(desc(n))
+
+if(nrow(fp_data) > 0) {
+    png(filename = paste0(OUT_DIR, SIG_NAME, "_", METHOD_NAME, "_FP_Count_per_CellType.png"), width = 1000, height = 700)
+    p_fp_bar <- ggplot(fp_data, aes(x = reorder(celltype_clean, -n), y = n, fill = celltype_clean)) +
+        geom_bar(stat = "identity") +
+        geom_text(aes(label = n), vjust = -0.5, size = 5) +
+        labs(title = paste("False Positives per Cell Type"),
+             subtitle = paste("Method:", METHOD_NAME, "| Signature:", SIG_NAME, "| Total FPs:", sum(fp_data$n)),
+             x = "Cell Type", y = "Number of FP Cells") +
+        theme_minimal() +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
+    print(p_fp_bar)
+    dev.off()
+} else {
+    message("No False Positives found to plot.")
+}
 
 # --- SAVE PERFORMANCE METRICS FOR COMPARISON ---
 performance_data <- data.frame(
