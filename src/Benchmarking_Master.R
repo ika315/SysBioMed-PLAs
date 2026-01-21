@@ -14,6 +14,8 @@ library(ggplot2)
 # Configuration
 # Options: "AUCell", "UCell", "AddModuleScore"
 METHOD_NAME  <- "WeightedAUCell" 
+SIG_NAME     <- "GNATENKO_PLATELET"
+SIGNATURE    <- "GNATENKO_PLATELET_SIGNATURE"
 TARGET_LABEL <- "PLA_Gating"
 GT_COLUMN    <- "pla.status"
 POSITIVE_VAL <- "PLA"
@@ -30,14 +32,16 @@ pbmc <- subset(pbmc, cells = common_cells)
 pbmc <- AddMetaData(pbmc, metadata = new_metadata[common_cells, ])
 
 # Define Output Directory
-OUT_DIR <- paste0("plots/Platelet_Main/", METHOD_NAME, "/")
+OUT_DIR <- paste0("plots/Platelet_Main/",SIG_NAME,"/", METHOD_NAME, "/")
 if (!dir.exists(OUT_DIR)) dir.create(OUT_DIR, recursive = TRUE)
 if (!dir.exists("results")) dir.create("results")
 
 # Load Gene Lists
 base_dir <- getwd()
 source(file.path(base_dir, "src", "read_and_extend_gene_list.R"))
-genes <- read_gene_list(file.path(base_dir, "data", "updated_gene_list.csv"))
+#genes <- read_gene_list(file.path(base_dir, "data", "updated_gene_list.csv"))
+PATH_SIG <- file.path(base_dir, "data", paste0(SIGNATURE, ".v2025.1.Hs.csv"))
+genes <- read_gene_list(PATH_SIG)
 
 pbmc$GT_Response <- ifelse(pbmc[[GT_COLUMN]] == POSITIVE_VAL, 1, 0)
 pbmc$GT_Class    <- ifelse(pbmc$GT_Response == 1, "Positive", "Negative")
@@ -58,7 +62,7 @@ if (METHOD_NAME == "AUCell" || METHOD_NAME == "WeightedAUCell") {
 } else if (METHOD_NAME == "UCell") {
     pbmc <- AddModuleScore_UCell(pbmc, features = list(Platelet_Orig = genes), name = NULL)
     pbmc$Raw_Score_Original <- pbmc$Platelet_Orig
-} else if (METHOD_NAME == "AddModuleScore") {> cor(pbmc$Raw_Score_Original, pbmc$Raw_Score, use = "complete.obs")
+} else if (METHOD_NAME == "AddModuleScore") {
     pbmc <- AddModuleScore(pbmc, features = list(genes), name = "AMS_Orig")
     pbmc$Raw_Score_Original <- pbmc$AMS_Orig1
 }
@@ -70,7 +74,7 @@ res_ext <- extend_gene_set(
 )
 extended_genes <- res_ext$extended_genes
 write.csv(data.frame(geneName = extended_genes), 
-          paste0("results/extended_platelet_gene_list_", METHOD_NAME, ".csv"), row.names = FALSE)
+          paste0("results/extended_platelet_gene_list_", SIG_NAME, "_", METHOD_NAME, ".csv"), row.names = FALSE)
 
 # Final Scoring
 if(METHOD_NAME == "WeightedAUCell") {
@@ -163,7 +167,7 @@ print(DimPlot(pbmc, group.by = "Error_Type", reduction = "umap", raster = TRUE) 
 dev.off()
 
 # --- Violin: Raw Scores ---
-png(filename = paste0(OUT_DIR, METHOD_NAME, "_Violin_Celltypes.png"), width = 1200, height = 600)res_ext
+png(filename = paste0(OUT_DIR, METHOD_NAME, "_Violin_Celltypes.png"), width = 1200, height = 600)
 p_vln_clean <- VlnPlot(pbmc, 
                        features = "Raw_Score", 
                        group.by = "celltype_clean", 
@@ -259,6 +263,7 @@ print(paste("Done! All plots saved to:", OUT_DIR))
 # --- SAVE PERFORMANCE METRICS FOR COMPARISON ---
 performance_data <- data.frame(
     Method = METHOD_NAME,
+    Signature = SIG_NAME,
     AUC = as.numeric(auc(roc_obj)),
     Precision = Prec_Val,
     Recall = Rec_Val,
@@ -268,6 +273,6 @@ performance_data <- data.frame(
 )
 
 write.csv(performance_data, 
-          file = paste0("results/metrics_", METHOD_NAME, ".csv"), 
+          file = paste0("results/metrics_", SIG_NAME, "_", METHOD_NAME, ".csv"),
           row.names = FALSE)
 
