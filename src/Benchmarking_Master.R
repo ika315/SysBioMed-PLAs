@@ -13,9 +13,9 @@ library(ggplot2)
 
 # Configuration
 # Options: "AUCell", "UCell", "AddModuleScore"
-METHOD_NAME  <- "WeightedAUCell" 
-SIG_NAME     <- "GNATENKO_PLATELET"
-SIGNATURE    <- "GNATENKO_PLATELET_SIGNATURE"
+METHOD_NAME  <- "AddModuleScore"
+SIG_NAME     <- "HP_ABNORMAL"
+SIGNATURE    <- "HP_ABNORMAL_PLATELET_MEMBRANE_PROTEIN_EXPRESSION"
 TARGET_LABEL <- "PLA_Gating"
 GT_COLUMN    <- "pla.status"
 POSITIVE_VAL <- "PLA"
