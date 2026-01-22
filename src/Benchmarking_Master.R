@@ -13,9 +13,18 @@ library(pheatmap)
 
 # Configuration
 # Options: "AUCell", "UCell", "AddModuleScore"
-METHOD_NAME  <- "AddModuleScore"
-SIG_NAME     <- "MANNE_COVID19_DN"
-SIGNATURE    <- "MANNE_COVID19_COMBINED_COHORT_VS_HEALTHY_DONOR_PLATELETS_DN"
+#METHOD_NAME  <- "AUCell"
+
+args <- commandArgs(trailingOnly = TRUE)
+
+if (length(args) >= 1) {
+  METHOD_NAME <- args[1] 
+} else {
+  METHOD_NAME <- "AUCell" 
+}
+
+SIG_NAME     <- "GNATENKO_PLATELET"
+SIGNATURE    <- "GNATENKO_PLATELET_SIGNATURE"
 TARGET_LABEL <- "PLA_Gating"
 GT_COLUMN    <- "pla.status"
 POSITIVE_VAL <- "PLA"
@@ -134,6 +143,29 @@ pbmc$Error_Type <- case_when(
 )
 pbmc$Error_Type <- factor(pbmc$Error_Type, levels = c("TP", "FP", "FN", "TN"))
 
+tp <- sum(pbmc$Error_Type == "TP", na.rm = TRUE)
+fp <- sum(pbmc$Error_Type == "FP", na.rm = TRUE)
+fn <- sum(pbmc$Error_Type == "FN", na.rm = TRUE)
+
+Prec_Val <- if((tp + fp) > 0) tp / (tp + fp) else 0
+Rec_Val  <- if((tp + fn) > 0) tp / (tp + fn) else 0
+F1_Score <- if((Prec_Val + Rec_Val) > 0) 2 * Prec_Val * Rec_Val / (Prec_Val + Rec_Val) else 0
+
+performance_data <- data.frame(
+    Method = METHOD_NAME,
+    Signature = SIG_NAME,
+    AUC = as.numeric(auc(roc_obj)),
+    Precision = Prec_Val,
+    Recall = Rec_Val,
+    F1_Score = F1_Score,
+    Threshold = THRESHOLD_Z,
+    Timestamp = Sys.time()
+)
+
+write.csv(performance_data, 
+          file = paste0("results/metrics_", SIG_NAME, "_", METHOD_NAME, ".csv"),
+          row.names = FALSE)
+
 # Visualizations
 
 # --- Reference UMAP: Gated Cell Types ---
@@ -184,14 +216,14 @@ dev.off()
 
 # Split Violin: PLA vs. Platelet-free
 png(filename = paste0(OUT_DIR, METHOD_NAME, "_Split_Violin_PLA_Status.png"), width = 1400, height = 700)
-p_split <- VlnPlot(pbmc, 
-                   features = "Raw_Score", 
-                   group.by = "celltype_clean", 
-                   split.by = GT_COLUMN,   
-                   pt.size = 0) +              
+p_split <- VlnPlot(pbmc,
+                   features = "Raw_Score",
+                   group.by = "celltype_clean",
+                   split.by = GT_COLUMN,
+                   pt.size = 0) +
     scale_fill_manual(values = c("PLA" = "#FF4B4B", "platelet-free" = "#4B8BFF")) +
     labs(title = paste(METHOD_NAME, "Score Comparison: PLA vs. Platelet-free"),
-         subtitle = "Internal score distribution within gated cell types",
+         subtitle = paste("Signature:", SIG_NAME),
          x = "Cell Type",
          y = "Raw Score",
          fill = "Gating Status") +
@@ -226,21 +258,12 @@ eval_df <- data.frame(score = pbmc$Z_Score, gt = pbmc$GT_Response) %>%
     mutate(tp_cum = cumsum(gt), fp_cum = cumsum(1 - gt),
            precision_vec = tp_cum / (tp_cum + fp_cum), recall_vec = tp_cum / sum(gt))
 
-# Calculate current metrics for annotation
-tp <- sum(pbmc$Error_Type == "TP")
-fp <- sum(pbmc$Error_Type == "FP")
-fn <- sum(pbmc$Error_Type == "FN")
-
-Prec_Val <- tp / (tp + fp)
-Rec_Val <- tp / (tp + fn)
-F1_Score <- 2 * Prec_Val * Rec_Val / (Prec_Val + Rec_Val)
-
 png(filename = paste0(OUT_DIR, METHOD_NAME, "_PR_Curve.png"), width = 800, height = 700)
 print(ggplot(eval_df, aes(x = recall_vec, y = precision_vec)) +
     geom_line(color = "#E41A1C", linewidth = 1.2) +
     annotate("point", x = Rec_Val, y = Prec_Val, color = "black", size = 4, shape = 18) +
     labs(title = paste("Precision-Recall Curve:", METHOD_NAME), 
-         subtitle = paste("Best Youden Point - Precision:", round(Prec_Val, 2), "Recall:", round(Rec_Val, 2)),
+         subtitle = paste("Precision:", round(Prec_Val, 2), "Recall:", round(Rec_Val, 2)),
          x = "Recall (Sensitivity)", y = "Precision") +
     theme_minimal())
 dev.off()
@@ -303,20 +326,3 @@ if(nrow(fp_data) > 0) {
 } else {
     message("No False Positives found to plot.")
 }
-
-# --- SAVE PERFORMANCE METRICS FOR COMPARISON ---
-performance_data <- data.frame(
-    Method = METHOD_NAME,
-    Signature = SIG_NAME,
-    AUC = as.numeric(auc(roc_obj)),
-    Precision = Prec_Val,
-    Recall = Rec_Val,
-    F1_Score = F1_Score,
-    Threshold = THRESHOLD_Z,
-    Timestamp = Sys.time()
-)
-
-write.csv(performance_data, 
-          file = paste0("results/metrics_", SIG_NAME, "_", METHOD_NAME, ".csv"),
-          row.names = FALSE)
-
