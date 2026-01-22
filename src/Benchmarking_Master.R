@@ -10,6 +10,8 @@ library(pROC)
 library(dplyr)
 library(ggplot2)
 library(pheatmap)
+library(tidyr)
+library(scales)
 
 # Configuration
 # Options: "AUCell", "UCell", "AddModuleScore"
@@ -20,15 +22,17 @@ args <- commandArgs(trailingOnly = TRUE)
 if (length(args) >= 1) {
   METHOD_NAME <- args[1] 
 } else {
-  METHOD_NAME <- "AUCell" 
+  METHOD_NAME <- "AUCellTest" 
 }
 
-SIG_NAME     <- "GNATENKO_PLATELET"
-SIGNATURE    <- "GNATENKO_PLATELET_SIGNATURE"
+SIG_NAME     <- "MANNE_COVID19_DN"
+SIGNATURE    <- "MANNE_COVID19_COMBINED_COHORT_VS_HEALTHY_DONOR_PLATELETS_DN"
+IMMUNE_SIG <- "GOBP_LEUKOCYTE_ACTIVATION_INVOLVED_IN_INFLAMMATORY_RESPONSE.v2025.1.Hs"
 TARGET_LABEL <- "PLA_Gating"
 GT_COLUMN    <- "pla.status"
 POSITIVE_VAL <- "PLA"
 PATH_DATA    <- "~/SysBioMed-PLAs/data/seu_sx_final.rds"
+GROUP_COL <- "celltype.l3"
 
 # Load data and Meta data Sync
 print(paste("Running Benchmark for Method:", METHOD_NAME))
@@ -55,6 +59,11 @@ genes <- read_gene_list(PATH_SIG)
 pbmc$GT_Response <- ifelse(pbmc[[GT_COLUMN]] == POSITIVE_VAL, 1, 0)
 pbmc$GT_Class    <- ifelse(pbmc$GT_Response == 1, "Positive", "Negative")
  
+# Load Immune Marker Genes
+PATH_IMMUNE_SIG <- file.path(base_dir, "data", paste0(IMMUNE_SIG, ".csv"))
+immune_genes <- read_gene_list(PATH_IMMUNE_SIG)
+immune_genes <- intersect(immune_genes, rownames(GetAssayData(pbmc, layer = "data")))
+
 # Grid Search
 #source(file.path(base_dir, "src", "Grid_Search.R"))
 #cell_rankings <- AUCell_buildRankings(GetAssayData(pbmc, layer = "data"), plotStats=FALSE)
@@ -63,17 +72,26 @@ pbmc$GT_Class    <- ifelse(pbmc$GT_Response == 1, "Positive", "Negative")
 # Scoring Logic
 print(paste("--- Calculating Scores using", METHOD_NAME, "---"))
 
-if (METHOD_NAME == "AUCell" || METHOD_NAME == "WeightedAUCell") {
+if (METHOD_NAME == "AUCell" || METHOD_NAME == "WeightedAUCell" || METHOD_NAME == "AUCellTest") {
     expression_matrix <- GetAssayData(pbmc, layer = "data")
     rankings <- AUCell_buildRankings(expression_matrix, plotStats=FALSE)
     auc_orig <- AUCell_calcAUC(list(Platelet_Orig = genes), rankings)
-    pbmc$Raw_Score_Original <- as.numeric(getAUC(auc_orig)[1, ])
+    pbmc$Raw_Score_Original <- as.numeric(getAUC(auc_orig)[1, ])    
+
+    auc_imm <- AUCell_calcAUC(list(Immune_Score= immune_genes), rankings)
+    pbmc$Immune_Score <- as.numeric(getAUC(auc_imm)[1, ])
 } else if (METHOD_NAME == "UCell") {
     pbmc <- AddModuleScore_UCell(pbmc, features = list(Platelet_Orig = genes), name = NULL)
     pbmc$Raw_Score_Original <- pbmc$Platelet_Orig
+
+    pbmc <- AddModuleScore_UCell(pbmc, features = list(Immune_Score = immune_genes), name = NULL)
+    pbmc$Immune_Score <- pbmc$Immune_Score
 } else if (METHOD_NAME == "AddModuleScore") {
     pbmc <- AddModuleScore(pbmc, features = list(genes), name = "AMS_Orig")
     pbmc$Raw_Score_Original <- pbmc$AMS_Orig1
+
+    pbmc <- AddModuleScore(pbmc, features = list(immune_genes), name = "AMS_Immune")
+    pbmc$Immune_Score <- pbmc$AMS_Immune1
 }
 
 # Geneset Extension
@@ -117,7 +135,7 @@ if(METHOD_NAME == "WeightedAUCell") {
     )
 
     pbmc$Raw_Score <- as.numeric(getAUC(auc_final)[1, ])
-}else if (METHOD_NAME == "AUCell") {
+}else if (METHOD_NAME == "AUCell" || METHOD_NAME == "AUCellTest") {
     auc_final <- AUCell_calcAUC(list(Platelet_Score = extended_genes), rankings)
     pbmc$Raw_Score <- as.numeric(getAUC(auc_final)[1, ])
 } else if (METHOD_NAME == "UCell") {
@@ -128,12 +146,111 @@ if(METHOD_NAME == "WeightedAUCell") {
     pbmc$Raw_Score <- pbmc$AMS_Final1
 }
 
-pbmc$Z_Score <- as.vector(scale(pbmc$Raw_Score))
 
-# Metrics and Threshold
-roc_obj <- roc(response = pbmc$GT_Response, predictor = pbmc$Z_Score, direction = "<", quiet = TRUE)
-THRESHOLD_Z <- as.numeric(coords(roc_obj, x = "best", best.method = "youden")$threshold)
-pbmc$Prediction <- ifelse(pbmc$Z_Score > THRESHOLD_Z, "Positive", "Negative")
+pbmc$Z_Score <- as.vector(scale(pbmc$Raw_Score))
+pbmc$Immune_Z <- as.vector(scale(pbmc$Immune_Score))
+
+best_thr <- pbmc@meta.data %>%
+    mutate(.all = "all") %>%
+    group_by(.all) %>%
+  group_modify(~{
+    df <- .x
+
+    if (length(unique(df$GT_Response)) < 2) {
+      return(data.frame(
+        Threshold_Z = NA_real_,
+        Threshold_I = NA_real_,
+        Precision = NA_real_,
+        Recall = NA_real_,
+        F1 = NA_real_,
+        TP = NA_integer_,
+        FP = NA_integer_,
+        TN = NA_integer_,
+        FN = NA_integer_,
+        n = nrow(df)
+      ))
+    }
+
+    z_grid <- unique(as.numeric(quantile(df$Z_Score, probs = seq(0, 0.95, 0.05), na.rm = TRUE)))
+    i_grid <- unique(as.numeric(quantile(df$Immune_Z, probs = seq(0, 0.95, 0.05), na.rm = TRUE)))
+
+    best <- list(F1 = -Inf)
+
+    for (tz in z_grid) {
+      for (ti in i_grid) {
+
+        pred_pos <- (df$Z_Score > tz) & (df$Immune_Z > ti)
+
+        tp <- sum(pred_pos & df$GT_Response == 1, na.rm = TRUE)
+        fp <- sum(pred_pos & df$GT_Response == 0, na.rm = TRUE)
+        fn <- sum(!pred_pos & df$GT_Response == 1, na.rm = TRUE)
+        tn <- sum(!pred_pos & df$GT_Response == 0, na.rm = TRUE)
+
+        prec <- if ((tp + fp) > 0) tp / (tp + fp) else 0
+        rec  <- if ((tp + fn) > 0) tp / (tp + fn) else 0
+        f1   <- if ((prec + rec) > 0) 2 * prec * rec / (prec + rec) else 0
+
+        if (f1 > best$F1) {
+          best <- list(
+            Threshold_Z = tz,
+            Threshold_I = ti,
+            Precision = prec,
+            Recall = rec,
+            F1 = f1,
+            TP = tp,
+            FP = fp,
+            TN = tn,
+            FN = fn
+          )
+        }
+      }
+    }
+
+    data.frame(
+      Threshold_Z = best$Threshold_Z,
+      Threshold_I = best$Threshold_I,
+      Precision = best$Precision,
+      Recall = best$Recall,
+      F1 = best$F1,
+      TP = best$TP,
+      FP = best$FP,
+      TN = best$TN,
+      FN = best$FN,
+      n = nrow(df)
+    )
+  }) %>%
+  ungroup()
+
+
+write.csv(best_thr,
+          file = paste0("results/thresholds2D_by_celltype_", SIG_NAME, "_", METHOD_NAME, ".csv"),
+          row.names = FALSE)
+
+pbmc$Prediction <- NA_character_
+
+#for (ct in best_thr$celltype.l3) {
+#  tz <- best_thr$Threshold_Z[best_thr$celltype.l3 == ct]
+#  ti <- best_thr$Threshold_I[best_thr$celltype.l3 == ct]
+
+#  idx <- which(pbmc$celltype.l3 == ct)
+  
+#  if (is.na(tz) || is.na(ti)) {
+#    pbmc$Prediction[idx] <- NA
+#  } else {
+#    pbmc$Prediction[idx] <- ifelse(
+#      (pbmc$Z_Score[idx] > tz) & (pbmc$Immune_Z[idx] > ti),
+#      "Positive", "Negative"
+#    )
+#  }
+# }
+
+tz <- best_thr$Threshold_Z[1]
+ti <- best_thr$Threshold_I[1]
+
+pbmc$Prediction <- ifelse(
+  (pbmc$Z_Score > tz) & (pbmc$Immune_Z > ti),
+  "Positive", "Negative"
+)
 
 pbmc$Error_Type <- case_when(
     pbmc$Prediction == "Positive" & pbmc$GT_Class == "Positive" ~ "TP",
@@ -151,15 +268,19 @@ Prec_Val <- if((tp + fp) > 0) tp / (tp + fp) else 0
 Rec_Val  <- if((tp + fn) > 0) tp / (tp + fn) else 0
 F1_Score <- if((Prec_Val + Rec_Val) > 0) 2 * Prec_Val * Rec_Val / (Prec_Val + Rec_Val) else 0
 
+roc_obj <- pROC::roc(pbmc$GT_Response, pbmc$Z_Score, quiet = TRUE)
+THRESHOLD_Z_PLATELET <- as.numeric(pROC::coords(roc_obj, x="best", best.method="youden")["threshold"])
+
+
 performance_data <- data.frame(
-    Method = METHOD_NAME,
-    Signature = SIG_NAME,
-    AUC = as.numeric(auc(roc_obj)),
-    Precision = Prec_Val,
-    Recall = Rec_Val,
-    F1_Score = F1_Score,
-    Threshold = THRESHOLD_Z,
-    Timestamp = Sys.time()
+  Method = METHOD_NAME,
+  Signature = SIG_NAME,
+  AUC_Score = as.numeric(pROC::auc(roc_obj)),
+  Precision = Prec_Val,
+  Recall = Rec_Val,
+  F1_Score = F1_Score,
+  Thresholding = "Per-celltype Youden",
+  Timestamp = Sys.time()
 )
 
 write.csv(performance_data, 
@@ -194,7 +315,7 @@ png(filename = paste0(OUT_DIR, METHOD_NAME, "_Error_UMAP.png"), width = 1000, he
 print(DimPlot(pbmc, group.by = "Error_Type", reduction = "umap", raster = TRUE) +
     scale_color_manual(values = c("TP"="#228B22", "FP"="#FF4500", "FN"="#1E90FF", "TN"="#D3D3D3")) +
     labs(title = paste(METHOD_NAME, "Classification Error Mapping"), 
-         subtitle = paste("Threshold Z =", round(THRESHOLD_Z, 3), "| GT:", TARGET_LABEL)) +
+    subtitle = paste0("Per-celltype Youden thresholds | GT: ", TARGET_LABEL)) +
     theme_minimal())
 dev.off()
 
@@ -237,10 +358,10 @@ dev.off()
 p_faceted_z <- ggplot(pbmc@meta.data, aes(x = Z_Score)) +
   geom_density(fill = "steelblue", alpha = 0.6) +
   facet_wrap(~ Error_Type, scales = "free_y") +
-  geom_vline(xintercept = THRESHOLD_Z, linetype = "dashed", color = "red") +
+  geom_vline(xintercept = THRESHOLD_Z_PLATELET, linetype = "dashed", color = "red") +
   theme_classic() +
   labs(title = "Z-Score Density by Classification Error Type",
-       subtitle = paste("Red Line = Automatic Threshold (Z =", round(THRESHOLD_Z, 2), ")"),
+       subtitle = paste("Red Line = Automatic Threshold (Z =", round(THRESHOLD_Z_PLATELET, 2), ")"),
        x = "Z-Score", y = "Density")
 
 ggsave(filename = paste0(OUT_DIR, METHOD_NAME, "_ZScore_Density_Errors.png"), 
@@ -273,9 +394,9 @@ png(filename = paste0(OUT_DIR, METHOD_NAME, "_ZScore_Violin.png"), width = 1000,
 print(ggplot(pbmc@meta.data, aes(x = celltype_clean, y = Z_Score, fill = celltype_clean)) +
     geom_violin(alpha = 0.7) +
     geom_boxplot(width = 0.1, outlier.shape = NA) +
-    geom_hline(yintercept = THRESHOLD_Z, linetype = "dashed", color = "red", linewidth = 1) +
+    geom_hline(yintercept = THRESHOLD_Z_PLATELET, linetype = "dashed", color = "red", linewidth = 1) +
     labs(title = paste(METHOD_NAME, "Z-Score Distribution across Cell Types"),
-         subtitle = paste("Red Dashed Line = Optimal Threshold (Z =", round(THRESHOLD_Z, 2), ")"),
+         subtitle = paste("Red Dashed Line = Optimal Threshold (Z =", round(THRESHOLD_Z_PLATELET, 2), ")"),
          x = "Cleaned Cell Types", y = "Z-Score") +
     theme_minimal() +
     theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none"))
@@ -326,3 +447,161 @@ if(nrow(fp_data) > 0) {
 } else {
     message("No False Positives found to plot.")
 }
+
+png(filename = paste0(OUT_DIR, METHOD_NAME, "_Thresholds_By_Celltype.png"), width = 1200, height = 600)
+p_thr <- ggplot(thr_table, aes(x = reorder(celltype_clean, Threshold_Z), y = Threshold_Z)) +
+  geom_col() +
+  coord_flip() +
+  theme_minimal() +
+  labs(title = "Per-celltype thresholds (Youden)",
+       x = "Cell type", y = "Threshold (Z_Score)")
+print(p_thr)
+dev.off()
+
+if(METHOD_NAME != "AUCellTest") {
+    stop("Intentional stop after threshold optimization")
+}
+
+thr_map <- best_thr %>%
+  dplyr::select(
+    .all,
+    Threshold_Z,
+    Threshold_I
+  )
+
+
+deltas <- seq(-1.0, 1.0, by = 0.05)
+
+sweep_results <- lapply(deltas, function(delta) {
+
+  pred_pos <- rep(FALSE, nrow(pbmc@meta.data))
+
+  for (ct in thr_map[[GROUP_COL]]) {
+    tz <- thr_map$Threshold_Z[thr_map[[GROUP_COL]] == ct][1] + delta
+    ti <- thr_map$Threshold_I[thr_map[[GROUP_COL]] == ct][1]
+
+    idx <- which(pbmc@meta.data[[GROUP_COL]] == ct)
+
+    if (length(idx) == 0 || is.na(tz) || is.na(ti)) next
+
+    pred_pos[idx] <- (pbmc$Z_Score[idx] > tz) & (pbmc$Immune_Z[idx] > ti)
+  }
+
+  # Confusion counts (global)
+  gt <- pbmc$GT_Response
+
+  tp <- sum(pred_pos & gt == 1, na.rm = TRUE)
+  fp <- sum(pred_pos & gt != 1, na.rm = TRUE)
+  fn <- sum((!pred_pos) & gt == 1, na.rm = TRUE)
+
+  prec <- if ((tp + fp) > 0) tp / (tp + fp) else 0
+  rec  <- if ((tp + fn) > 0) tp / (tp + fn) else 0
+  f1   <- if ((prec + rec) > 0) 2 * prec * rec / (prec + rec) else 0
+
+  data.frame(
+    delta = delta,
+    Precision = prec,
+    Recall = rec,
+    F1 = f1,
+    TP = tp, FP = fp, FN = fn
+  )
+}) %>% bind_rows()
+
+best_delta_row <- sweep_results %>% arrange(desc(F1)) %>% slice(1)
+best_delta <- best_delta_row$delta
+
+png(filename = paste0(OUT_DIR, METHOD_NAME, "_PR_Sweep_Zoffset_ImmuneFixed.png"),
+    width = 900, height = 700)
+
+print(
+  ggplot(sweep_results, aes(x = Recall, y = Precision)) +
+    geom_path(linewidth = 1) +
+    geom_point(size = 1.5, alpha = 0.8) +
+    geom_point(data = best_delta_row, size = 3) +
+    theme_minimal() +
+    labs(
+      title = paste("PR sweep:", METHOD_NAME),
+      subtitle = paste0("Immune thresholds fixed per ", GROUP_COL,
+                        " | Sweeping Z thresholds with global offset Δ",
+                        " | Best Δ=", best_delta,
+                        " (F1=", round(best_delta_row$F1, 3), ")"),
+      x = "Recall",
+      y = "Precision"
+    )
+)
+
+dev.off()
+
+write.csv(sweep_results,
+          file = paste0("results/PR_sweep_Zoffset_ImmuneFixed_", SIG_NAME, "_", METHOD_NAME, ".csv"),
+          row.names = FALSE)
+
+metrics <- best_thr %>%
+  mutate(
+    Accuracy = (TP + TN) / n,
+    Balanced_Accuracy = 0.5 * (TP / (TP + FN) + TN / (TN + FP)),
+    Precision = TP / (TP + FP),
+    Recall = TP / (TP + FN),
+    F1 = 2 * Precision * Recall / (Precision + Recall)
+  )
+
+
+p <- ggplot(metrics %>% arrange(Accuracy),
+       aes(x = reorder(celltype.l3, Accuracy), y = Accuracy)) +
+  geom_col() +
+  coord_flip() +
+  labs(x = NULL, y = "Accuracy", title = "Accuracy per cell type") +
+  theme_minimal()
+ggsave(filename = paste0(OUT_DIR, METHOD_NAME, "_Accuracy_per_Celltype.pdf"),
+       plot = p, width = 8, height = 6)
+
+p <- ggplot(metrics %>% arrange(Balanced_Accuracy),
+       aes(x = reorder(celltype.l3, Balanced_Accuracy), y = Balanced_Accuracy)) +
+  geom_col() +
+  coord_flip() +
+  labs(x = NULL, y = "Balanced Accuracy", title = "Balanced accuracy per cell type") +
+  theme_minimal()
+ggsave(filename = paste0(OUT_DIR, METHOD_NAME, "_Balanced_Accuracy_per_Celltype.pdf"),
+       plot = p, width = 8, height = 6)
+
+p <- ggplot(metrics,
+       aes(x = reorder(celltype.l3, Balanced_Accuracy),
+           y = Balanced_Accuracy, size = n)) +
+  geom_point() +
+  coord_flip() +
+  labs(x = NULL, y = "Balanced Accuracy", title = "Balanced accuracy per cell type (point size = n)") +
+  theme_minimal()
+ggsave(filename = paste0(OUT_DIR, METHOD_NAME, "_Balanced_Accuracy_per_Celltype_pointsize_n.pdf"),
+       plot = p, width = 8, height = 6)
+
+
+cm_long <- best_thr %>%
+  select(celltype.l3, TP, FP, TN, FN) %>%
+  pivot_longer(
+    cols = c(TP, FP, TN, FN),
+    names_to = "entry",
+    values_to = "count"
+  ) %>%
+  mutate(
+    Truth = ifelse(entry %in% c("TP", "FN"), "GT = 1", "GT = 0"),
+    Pred  = ifelse(entry %in% c("TP", "FP"), "Pred = 1", "Pred = 0"),
+    entry = factor(entry, levels = c("TP", "FP", "FN", "TN"))
+  )
+
+p <- ggplot(cm_long, aes(x = Pred, y = Truth, fill = count)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = count), size = 3) +
+  facet_wrap(~ celltype.l3) +
+  scale_y_discrete(limits = rev(c("GT = 0", "GT = 1"))) +
+  scale_fill_viridis_c() +
+  labs(
+    title = "Confusion matrices per cell type",
+    x = NULL,
+    y = NULL,
+    fill = "Count"
+  ) +
+  theme_minimal()
+
+
+ggsave(filename = paste0(OUT_DIR, METHOD_NAME, "_Confusion_Matrices_per_Celltype.pdf"),
+       plot = p, width = 12, height = 8)
