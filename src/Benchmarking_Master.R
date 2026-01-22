@@ -326,3 +326,60 @@ if(nrow(fp_data) > 0) {
 } else {
     message("No False Positives found to plot.")
 }
+
+# --- Heatmap: All Error Types (TP, FP, FN, TN) ---
+cells_subset <- subset(pbmc, subset = Error_Type %in% c("TP", "FP", "FN", "TN"))
+
+if(length(genes_to_show) > 0 && ncol(cells_subset) > 0) {
+    avg_exp <- AverageExpression(cells_subset, 
+                                 features = genes_to_show, 
+                                 group.by = "Error_Type", 
+                                 layer = "data")$RNA
+    
+    avg_exp <- avg_exp[, c("TP", "FP", "FN", "TN"), drop = FALSE]
+
+    png(filename = paste0(OUT_DIR, SIG_NAME, "_", METHOD_NAME, "_Heatmap_All_Errors.png"), width = 1000, height = 1000)
+    pheatmap(avg_exp, 
+             scale = "row", 
+             cluster_cols = FALSE, # Reihenfolge TP, FP, FN, TN beibehalten
+             main = paste("Gene Profile: Comparison of All Error Types (", SIG_NAME, ")"),
+             color = colorRampPalette(c("blue", "white", "red"))(100))
+    dev.off()
+}
+
+# --- DotPlot Zoom: TP vs FP across Celltypes ---
+cells_to_compare <- subset(pbmc, subset = Error_Type %in% c("TP", "FP"))
+
+cells_to_compare$Plot_Group <- paste(cells_to_compare$celltype_clean, cells_to_compare$Error_Type, sep = "_")
+
+png(filename = paste0(OUT_DIR, SIG_NAME, "_", METHOD_NAME, "_DotPlot_TP_vs_FP.png"), width = 1200, height = 800)
+p_dot <- DotPlot(cells_to_compare, 
+                 features = genes_to_show, 
+                 group.by = "Plot_Group") + 
+    coord_flip() + # Gene auf der Y-Achse sind meist besser lesbar
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    scale_colour_gradient2(low = "blue", mid = "white", high = "red") +
+    labs(title = "Zoom into FP: Gene Expression Comparison",
+         subtitle = "TP vs FP profiles per Cell Type",
+         x = "Signature Genes", y = "Cell Type & Error Class")
+
+print(p_dot)
+dev.off()
+
+# Barplot with percentage of error types for each celltype 
+error_counts <- pbmc@meta.data %>%
+    group_by(celltype_clean, Error_Type) %>%
+    tally() %>%
+    group_by(celltype_clean) %>%
+    mutate(perc = n / sum(n) * 100)
+
+png(filename = paste0(OUT_DIR, SIG_NAME, "_", METHOD_NAME, "_Error_Composition_by_Celltype.png"), width = 1200, height = 700)
+p_comp <- ggplot(error_counts, aes(x = celltype_clean, y = perc, fill = Error_Type)) +
+    geom_bar(stat = "identity") +
+    scale_fill_manual(values = c("TP"="#228B22", "FP"="#FF4500", "FN"="#1E90FF", "TN"="#D3D3D3")) +
+    labs(title = "Error Composition per Cell Type",
+         y = "Percentage (%)", x = "Cell Type") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+print(p_comp)
+dev.off()
