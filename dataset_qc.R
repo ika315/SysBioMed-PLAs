@@ -17,6 +17,10 @@ library(matrixStats)
 library(clustree)
 library(scry)
 library(ggplot2)
+library(ggrepel)
+
+plot_dir <- "plots"
+data_path <- "data/GSM5008737_RNA_3P/"
 
 save_plot <- function(plot, filename, width = 8, height = 6) {
   ggsave(
@@ -38,8 +42,6 @@ save_plot <- function(plot, filename, width = 8, height = 6) {
 
 
 # read data
-data_path <- "data/GSM5008737_RNA_3P/"
-plot_dir <- "plots"
 dir.create(plot_dir, showWarnings = FALSE, recursive = TRUE)
 counts <- Read10X(data.dir = data_path)
 counts <- as(counts, "dgCMatrix")
@@ -129,7 +131,8 @@ plot_qc_prepost <- function(seu, prefix, group.by = "donor_time") {
 plot_qc_prepost(seu, "pre_QC")
 
 saveRDS(seu, file = "data/seu_before_filtering.rds")
-seu_preQC <- readRDS("data/seu_before_filtering.rds")
+# seu_preQC <- readRDS("data/seu_before_filtering.rds")
+seu_preQC <- seu
 
 # qc start
 
@@ -138,7 +141,6 @@ is_outlier_mad <- function(x, nmads = 5, type = c("both", "lower", "upper")){
 
   med <- median(x, na.rm = TRUE)
   madv <- mad(x, constant = 1, na.rm = TRUE)
-
   if (madv == 0 || is.na(madv)) {
     return (rep(FALSE, length(x)))
   }
@@ -223,7 +225,7 @@ sc <- autoEstCont(sc, doPlot = TRUE)
 gc()
 corrected <- adjustCounts(sc, roundToInt = TRUE)
 
-rm(tod, flt, seu, soupx_groups, keep) 
+rm(tod, seu, soupx_groups) 
 gc()
 
 seu_sx <- CreateSeuratObject(counts = corrected)
@@ -257,7 +259,7 @@ seu_sx <- subset(seu_sx, subset = !qc_outlier)
 saveRDS(seu_sx, file = "data/seu_after_soup.rds")
 # clustering
 
-seu_sx <- NormalizeData(seu_sx, normalization.method = "LogNormalize",)
+seu_sx <- NormalizeData(seu_sx, normalization.method = "LogNormalize")
 
 # seu_sx <- FindVariableFeatures(seu_sx, selection.method = "vst", nfeatures = 2000)
 
@@ -316,7 +318,6 @@ save_plot(p, "UMAP_scDblFinder_score.png")
 
 table(seu_sx$scDblFinder_class)
 saveRDS(seu_sx, file = "data/seu_after_dd.rds")
-
 #print(
   #DimPlot(seu_sx, group.by = "scDblFinder_class", reduction = "umap")
 #)
@@ -329,7 +330,7 @@ seu_sx <- subset(seu_sx, subset = scDblFinder_class == "singlet")
 
 # final clustering
 
-seu_sx <- NormalizeData(seu_sx, normalization.method = "LogNormalize",)
+seu_sx <- NormalizeData(seu_sx, normalization.method = "LogNormalize")
 
 # seu_sx <- FindVariableFeatures(seu_sx, selection.method = "vst", nfeatures = 2000)
 
@@ -357,78 +358,20 @@ seu_sx <- ScaleData(seu_sx, features = hvgs_genes) #, vars.to.regress = c("perce
 seu_sx <- RunPCA(seu_sx, features = hvgs_genes)
 
 dev_sorted <- sort(dev, decreasing = TRUE)
-df_rank <- data.frame(
-  rank = seq_along(dev_sorted),
-  deviance = as.numeric(dev_sorted),
- # qc start
-
-out_low_counts <- is_outlier_mad(seu_sx$nCount_RNA, nmads = 5, type = "both")
-out_low_genes <- is_outlier_mad(seu_sx$nFeature_RNA, nmads = 5, type = "both")
-
-out_high_mt <- is_outlier_mad(seu_sx$percent.mt, nmads = 5, type = "upper")
-out_high_ribo <- is_outlier_mad(seu_sx$percent.ribo, nmads = 5, type = "upper")
-out_high_hb <- is_outlier_mad(seu_sx$percent.hb, nmads = 5, type = "upper")
-
-seu_sx$qc_outlier <- out_low_counts | out_low_genes | out_high_mt | out_high_hb | out_high_ribo
-
-seu_sx <- subset(seu_sx, subset = !qc_outlier)
-
-# cluster for soup
-dims.use <- 1:20
-
-seu <- NormalizeData(seu)
-
-# seu <- FindVariableFeatures(seu, selection.method = "vst", nfeatures = 2000)
-
-sce <- as.SingleCellExperiment(seu)
-hvgs <- devianceFeatureSelection(sce)
-dev <- rowData(hvgs)$binomial_deviance
-names(dev) <- rownames(hvgs)  # Gene als Names
-
-## 4) Nach Deviance sortieren (absteigend) und Top 2000 Gene nehmen
-hvgs_genes <- names(sort(dev, decreasing = TRUE))[1:2000]
-
-## 5) Diese Gen-Namen als VariableFeatures im Seurat-Objekt setzen
-VariableFeatures(seu) <- hvgs_genes
-
-seu <- ScaleData(seu, features = hvgs_genes) # vars to regress?
-
-seu <- RunPCA(seu, features = hvgs_genes)
-
-seu <- FindNeighbors(seu, dims = dims.use)
-
-seu <- FindClusters(seu, resolution = 0.5)
-
-soupx_groups <- seu$seurat_clusters
-names(soupx_groups) <- colnames(seu)
-soupx_groups <- soupx_groups[colnames(flt)]
-
-saveRDS(seu, file = "data/seu_before_soup.rds") is_hvg = seq_along(dev_sorted) <= 2000
-)
-
-p <- ggplot(df_rank, aes(x = rank, y = deviance)) +
-  geom_point(aes(alpha = is_hvg), size = 0.6) +
-  ggtitle("Deviance feature selection: rank vs deviance") +
-  xlab("Gene rank (1 = highest deviance)") +
-  ylab("Binomial deviance")
-
-save_plot(p, "HVG_deviance_rankplot.png")
-
-p <- ggplot(df_rank, aes(x = rank, y = deviance)) +
-  geom_point(size = 0.4, alpha = 0.6) +
-  geom_vline(xintercept = 2000, linetype = "dashed") +
-  ggtitle("HVG selection by deviance: rank plot") +
-  xlab("Gene rank (1 = highest deviance)") +
-  ylab("Binomial deviance")
-
-save_plot(p, "HVG_deviance_rankplot.png")
-
 
 df_rank <- data.frame(
   rank = seq_along(dev_sorted),
   deviance = as.numeric(dev_sorted),
   HVG = seq_along(dev_sorted) <= 2000
 )
+
+p <- ggplot(df_rank, aes(x = rank, y = deviance)) +
+  geom_point(aes(alpha = HVG), size = 0.6) +
+  ggtitle("Deviance feature selection: rank vs deviance") +
+  xlab("Gene rank (1 = highest deviance)") +
+  ylab("Binomial deviance")
+
+save_plot(p, "HVG_deviance_rankplot.png")
 
 top_n <- 10
 top_genes <- names(dev_sorted)[1:top_n]
@@ -467,7 +410,6 @@ p <- ggplot(df_top, aes(x = deviance)) +
 
 save_plot(p, "HVG_deviance_hist_topflag.png")
 
-saveRDS(seu_sx, file = "data/seu_after_last_pca.rds")
 
 seu_sx <- FindNeighbors(seu_sx, dims = dims.use)
 
@@ -545,7 +487,7 @@ save_plot(p, "QC_post_violin_counts_mt.png", width = 10, height = 5)
 p <- VlnPlot(
   seu_sx,
   features = "percent.mt",
-  group.by = "donor_time",
+  group.by = "donor_time",dims.use
   pt.size = 0,
   ncol = 1
 ) + ggtitle("Post-QC: percent_final.mt per sample")
@@ -580,4 +522,4 @@ p <- VlnPlot(
 save_plot(p, "QC_pre_violin_count.png", width = 10, height = 5)
 
 saveRDS(seu_sx, file = "data/seu_sx_final_new.rds")
-seu_sx <- readRDS("data/seu_sx_final_new.rds")
+# seu_sx <- readRDS("data/seu_sx_final_new.rds")
