@@ -23,15 +23,15 @@ if (length(args) >= 1) {
   METHOD_NAME <- "AUCell" 
 }
 
-SIG_NAME     <- "HP_ABNORMAL"
-SIGNATURE    <- "HP_ABNORMAL_PLATELET_MEMBRANE_PROTEIN_EXPRESSION"
+SIG_NAME     <- "MANNE_COVID19_UP"
+SIGNATURE    <- "MANNE_COVID19_COMBINED_COHORT_VS_HEALTHY_DONOR_PLATELETS_UP"
 TARGET_LABEL <- "PLA_Gating"
 GT_COLUMN    <- "pla.status"
 POSITIVE_VAL <- "PLA"
 PATH_DATA    <- "~/SysBioMed-PLAs/data/seu_sx_final.rds"
 
 # Load data and Meta data Sync
-print(paste("Running Benchmark for Method:", METHOD_NAME))
+print(paste("Running Benchmark for Method:", METHOD_NAME, " with Gene Signature:", SIG_NAME))
 pbmc <- readRDS(PATH_DATA)
 
 new_metadata <- read.csv("~/SysBioMed-PLAs/data/external_dataset_pla-status_metatable.csv", row.names = 1)
@@ -76,14 +76,31 @@ if (METHOD_NAME == "AUCell" || METHOD_NAME == "WeightedAUCell") {
     pbmc$Raw_Score_Original <- pbmc$AMS_Orig1
 }
 
-# Geneset Extension
-res_ext <- extend_gene_set(
-    pbmc = pbmc, base_genes = genes, score_name = "Raw_Score_Original", 
-    top_n = 50, high_quantile = 0.9, min.pct = 0.05, test.use = "wilcox"
-)
-extended_genes <- res_ext$extended_genes
-write.csv(data.frame(geneName = extended_genes), 
-          paste0("results/extended_platelet_gene_list_", SIG_NAME, "_", METHOD_NAME, ".csv"), row.names = FALSE)
+# Geneset Extension mit Skip-Logik
+EXT_FILE <- paste0("results/extended_platelet_gene_list_", SIG_NAME, "_", METHOD_NAME, ".csv")
+
+if (file.exists(EXT_FILE)) {
+    message("Lade existierende erweiterte Genliste: ", EXT_FILE)
+    ext_df <- read.csv(EXT_FILE)
+    extended_genes <- ext_df$geneName
+} else {
+    message("Berechne neue Geneset Extension (das kann dauern)...")
+    res_ext <- extend_gene_set(
+        pbmc = pbmc, base_genes = genes, score_name = "Raw_Score_Original", 
+        top_n = 50, high_quantile = 0.9, min.pct = 0.05, test.use = "wilcox"
+    )
+    extended_genes <- res_ext$extended_genes
+    write.csv(data.frame(geneName = extended_genes), EXT_FILE, row.names = FALSE)
+}
+
+
+#res_ext <- extend_gene_set(
+#    pbmc = pbmc, base_genes = genes, score_name = "Raw_Score_Original", 
+#    top_n = 50, high_quantile = 0.9, min.pct = 0.05, test.use = "wilcox"
+#)
+#extended_genes <- res_ext$extended_genes
+#write.csv(data.frame(geneName = extended_genes), 
+#          paste0("results/extended_platelet_gene_list_", SIG_NAME, "_", METHOD_NAME, ".csv"), row.names = FALSE)
 
 # Final Scoring
 if(METHOD_NAME == "WeightedAUCell") {
