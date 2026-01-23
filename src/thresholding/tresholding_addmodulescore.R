@@ -46,6 +46,11 @@ pbmc <- DietSeurat(
 rm(pbmc_full)
 gc()
 
+if (!"umap" %in% Reductions(pbmc)) {
+  message("UMAP not found after DietSeurat – recomputing UMAP")
+  pbmc <- RunUMAP(pbmc, dims = 1:30)
+}
+
 # ----------------------------
 # Ground truth (GT)
 # ----------------------------
