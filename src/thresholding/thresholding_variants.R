@@ -21,18 +21,26 @@ dir.create(plot_dir, recursive = TRUE, showWarnings = FALSE)
 # Load data
 # ----------------------------
 message("Loading Seurat object...")
-pbmc <- readRDS(PATH_DATA)
 
-DefaultAssay(pbmc) <- "RNA"
-#pbmc <- DietSeurat(pbmc, assays = "RNA", misc = FALSE, images = FALSE) 
+pbmc_full <- readRDS(PATH_DATA)
+DefaultAssay(pbmc_full) <- "RNA"
+
 pbmc <- DietSeurat(
-  pbmc,
+  pbmc_full,
   assays = "RNA",
   reductions = c("pca", "umap"),
   graphs = c("RNA_nn", "RNA_snn"),
   misc = FALSE,
   images = FALSE
 )
+
+rm(pbmc_full)
+gc()
+
+# Drop heavy slots
+pbmc[["RNA"]]@counts <- Matrix::Matrix(0, 0, 0)
+pbmc[["RNA"]]@scale.data <- matrix(0, 0, 0)
+gc()
 
 # ----------------------------
 # Ground truth (GT)
