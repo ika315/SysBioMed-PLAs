@@ -46,11 +46,6 @@ pbmc <- DietSeurat(
 rm(pbmc_full)
 gc()
 
-# Drop heavy assay slots (IMPORTANT)
-pbmc[["RNA"]]@counts <- Matrix::Matrix(0, 0, 0)
-pbmc[["RNA"]]@scale.data <- matrix(0, 0, 0)
-gc()
-
 # ----------------------------
 # Ground truth (GT)
 # ----------------------------
