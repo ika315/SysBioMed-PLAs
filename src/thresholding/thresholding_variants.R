@@ -24,6 +24,15 @@ message("Loading Seurat object...")
 pbmc <- readRDS(PATH_DATA)
 
 DefaultAssay(pbmc) <- "RNA"
+#pbmc <- DietSeurat(pbmc, assays = "RNA", misc = FALSE, images = FALSE) 
+pbmc <- DietSeurat(
+  pbmc,
+  assays = "RNA",
+  reductions = c("pca", "umap"),
+  graphs = c("RNA_nn", "RNA_snn"),
+  misc = FALSE,
+  images = FALSE
+)
 
 # ----------------------------
 # Ground truth (GT)
