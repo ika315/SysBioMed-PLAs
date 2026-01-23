@@ -46,8 +46,16 @@ pbmc <- DietSeurat(
 rm(pbmc_full)
 gc()
 
+# recompute PCA if needed
+if (!"pca" %in% Reductions(pbmc)) {
+  message("PCA not found – recomputing PCA")
+  pbmc <- ScaleData(pbmc, verbose = FALSE)
+  pbmc <- RunPCA(pbmc, npcs = 30, verbose = FALSE)
+}
+
+# recompute UMAP if needed
 if (!"umap" %in% Reductions(pbmc)) {
-  message("UMAP not found after DietSeurat – recomputing UMAP")
+  message("UMAP not found – recomputing UMAP")
   pbmc <- RunUMAP(pbmc, dims = 1:30)
 }
 
