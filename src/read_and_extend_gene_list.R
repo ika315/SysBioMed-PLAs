@@ -118,7 +118,7 @@ gmt_dir_to_csv <- function(gmt_dir) {
   }
 }
 
-gmt_dir_to_csv("/Users/irem/SysBioMed-PLAs/data/gmt_lists")
+#gmt_dir_to_csv("/Users/irem/SysBioMed-PLAs/data/gmt_lists")
 
 # immune gene set
 # diff of platelets & leukocyte activation
@@ -130,45 +130,45 @@ gmt_dir_to_csv("/Users/irem/SysBioMed-PLAs/data/gmt_lists")
 # -----------------------------
 
 # read gene lists
-updated_genes <- read_gene_list("data/updated_gene_list.csv")
+#updated_genes <- read_gene_list("data/updated_gene_list.csv")
 
-leukocyte_activation_genes <- read_gene_list(
-  "data/gmt_lists/GOBP_LEUKOCYTE_ACTIVATION_INVOLVED_IN_INFLAMMATORY_RESPONSE.v2025.1.Hs.csv"
-)
+#leukocyte_activation_genes <- read_gene_list(
+#  "data/gmt_lists/GOBP_LEUKOCYTE_ACTIVATION_INVOLVED_IN_INFLAMMATORY_RESPONSE.v2025.1.Hs.csv"
+#)
 
 # COMPARING THE DIFFERENT PLATELET GENES
 
-files <- c(
-  "data/updated_gene_list.csv",
-  "data/gmt_lists/GNATENKO_PLATELET_SIGNATURE.v2025.1.Hs.csv",
-  "data/gmt_lists/GOBP_LEUKOCYTE_ACTIVATION_INVOLVED_IN_INFLAMMATORY_RESPONSE.v2025.1.Hs.csv",
-  "data/gmt_lists/GOBP_REGULATION_OF_PLATELET_ACTIVATION.v2025.1.Hs.csv",
-  "data/gmt_lists/HP_ABNORMAL_PLATELET_MEMBRANE_PROTEIN_EXPRESSION.v2025.1.Hs.csv",
-  "data/gmt_lists/MANNE_COVID19_COMBINED_COHORT_VS_HEALTHY_DONOR_PLATELETS_DN.v2025.1.Hs.csv",
-  "data/gmt_lists/MANNE_COVID19_COMBINED_COHORT_VS_HEALTHY_DONOR_PLATELETS_UP.v2025.1.Hs.csv",
-  "data/gmt_lists/REACTOME_PLATELET_ACTIVATION_SIGNALING_AND_AGGREGATION.v2025.1.Hs.csv",
-  "data/gmt_lists/WP_PLATELETMEDIATED_INTERACTIONS_WITH_VASCULAR_AND_CIRCULATING_CELLS.v2025.1.Hs.csv"
-)
+#files <- c(
+#  "data/updated_gene_list.csv",
+#  "data/gmt_lists/GNATENKO_PLATELET_SIGNATURE.v2025.1.Hs.csv",
+#  "data/gmt_lists/GOBP_LEUKOCYTE_ACTIVATION_INVOLVED_IN_INFLAMMATORY_RESPONSE.v2025.1.Hs.csv",
+#  "data/gmt_lists/GOBP_REGULATION_OF_PLATELET_ACTIVATION.v2025.1.Hs.csv",
+#  "data/gmt_lists/HP_ABNORMAL_PLATELET_MEMBRANE_PROTEIN_EXPRESSION.v2025.1.Hs.csv",
+#  "data/gmt_lists/MANNE_COVID19_COMBINED_COHORT_VS_HEALTHY_DONOR_PLATELETS_DN.v2025.1.Hs.csv",
+#  "data/gmt_lists/MANNE_COVID19_COMBINED_COHORT_VS_HEALTHY_DONOR_PLATELETS_UP.v2025.1.Hs.csv",
+#  "data/gmt_lists/REACTOME_PLATELET_ACTIVATION_SIGNALING_AND_AGGREGATION.v2025.1.Hs.csv",
+#  "data/gmt_lists/WP_PLATELETMEDIATED_INTERACTIONS_WITH_VASCULAR_AND_CIRCULATING_CELLS.v2025.1.Hs.csv"
+#)
 
-gene_lists <- lapply(files, read_gene_list)
-names(gene_lists) <- basename(files)
+#gene_lists <- lapply(files, read_gene_list)
+#names(gene_lists) <- basename(files)
 
-overlap <- matrix(0, length(gene_lists), length(gene_lists))
-rownames(overlap) <- colnames(overlap) <- names(gene_lists)
+#overlap <- matrix(0, length(gene_lists), length(gene_lists))
+#rownames(overlap) <- colnames(overlap) <- names(gene_lists)
 
-for (i in seq_along(gene_lists)) {
-  for (j in seq_along(gene_lists)) {
-    overlap[i, j] <- length(intersect(gene_lists[[i]], gene_lists[[j]]))
-  }
-}
+#for (i in seq_along(gene_lists)) {
+#  for (j in seq_along(gene_lists)) {
+#    overlap[i, j] <- length(intersect(gene_lists[[i]], gene_lists[[j]]))
+#  }
+#}
 
-diag(overlap) <- NA
-overlap
+#diag(overlap) <- NA
+#overlap
 
-write_csv(
-  data.frame(List = rownames(overlap), overlap),
-  "data/overlap_gene_lists.csv"
-)
-unique_genes <- names(table(unlist(gene_lists)) == 1)
+#write_csv(
+#  data.frame(List = rownames(overlap), overlap),
+#  "data/overlap_gene_lists.csv"
+#)
+#unique_genes <- names(table(unlist(gene_lists)) == 1)
 
 
