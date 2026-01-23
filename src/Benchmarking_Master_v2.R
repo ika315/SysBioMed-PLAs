@@ -234,21 +234,24 @@ if(nrow(fp_data) > 0) {
 }
 
 # C. PERFORMANCE KURVEN
-png(paste0(OUT_DIR, "7_ROC_Curve.png"), 700, 700)
+png(paste0(OUT_DIR, "10_ROC_Curve.png"), 700, 700)
 plot(roc_obj, col="#E41A1C", lwd=3, main=paste("ROC AUC:", round(auc(roc_obj),3)))
 dev.off()
 
 eval_df <- data.frame(score=pbmc$Z_Score, gt=pbmc$GT_Response) %>% arrange(desc(score)) %>%
            mutate(tp_c=cumsum(gt), fp_c=cumsum(1-gt), prec=tp_c/(tp_c+fp_c), rec=tp_c/sum(gt))
-png(paste0(OUT_DIR, "8_PR_Curve.png"), 800, 700)
-print(ggplot(eval_df, aes(x=rec, y=prec)) + geom_line(color="#E41A1C", size=1.2) + theme_minimal() + labs(title="PR Curve"))
+png(paste0(OUT_DIR, "11_PR_Curve.png"), 800, 700)
+print(ggplot(eval_df, aes(x=rec, y=prec)) + geom_line(color="#E41A1C", linewidth=1.2) + 
+      theme_minimal() + labs(title="Precision-Recall Curve", x="Recall", y="Precision"))
 dev.off()
 
-png(paste0(OUT_DIR, "11_Error_Composition_Bar.png"), 1200, 700)
-err_perc <- pbmc@meta.data %>% group_by(celltype_clean, Error_Type) %>% tally() %>% group_by(celltype_clean) %>% mutate(p=n/sum(n)*100)
+png(paste0(OUT_DIR, "12_Error_Composition_Bar.png"), 1200, 700)
+err_perc <- pbmc@meta.data %>% group_by(celltype_clean, Error_Type) %>% tally() %>% 
+            group_by(celltype_clean) %>% mutate(p=n/sum(n)*100)
 print(ggplot(err_perc, aes(x=celltype_clean, y=p, fill=Error_Type)) + geom_bar(stat="identity") + 
-      scale_fill_manual(values=c("TP"="#228B22","FP"="#FF4500","FN"="#1E90FF","TN"="#D3D3D3")) + theme_minimal() +
-      theme(axis.text.x=element_text(angle=45, hjust=1)))
+      scale_fill_manual(values=c("TP"="#228B22","FP"="#FF4500","FN"="#1E90FF","TN"="#D3D3D3")) + 
+      theme_minimal() + theme(axis.text.x=element_text(angle=45, hjust=1)) +
+      labs(title="Error Composition per Cell Type", y="Percentage (%)", fill="Error Class"))
 dev.off()
 
 message("Done! Alle Plots in: ", OUT_DIR)
