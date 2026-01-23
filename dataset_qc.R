@@ -18,6 +18,8 @@ library(clustree)
 library(scry)
 library(ggplot2)
 library(ggrepel)
+library(harmony)
+
 
 plot_dir <- "plots"
 data_path <- "data/GSM5008737_RNA_3P/"
@@ -82,12 +84,6 @@ gc()
 
 
 # statistics
-seu[["percent.mt"]] <- PercentageFeatureSet(seu, pattern = "^MT-")
-seu[["percent.ribo"]] <- PercentageFeatureSet(seu, pattern = "^RP[SL]")
-
-hb_genes <- grep("^HB", rownames(seu), value = TRUE)
-hb_genes <- hb_genes[!grepl("^HBP", hb_genes)]
-seu[["percent.hb"]] <- PercentageFeatureSet(seu, features = hb_genes)
 
 plot_qc_prepost <- function(seu, prefix, group.by = "donor_time") {
   # Violin: absolute QC metrics per sample
@@ -128,6 +124,14 @@ plot_qc_prepost <- function(seu, prefix, group.by = "donor_time") {
   save_plot(p, paste0("QC_", prefix, "_scatter_nCount_vs_percentHB.png"))
 }
 
+seu[["percent.mt"]] <- PercentageFeatureSet(seu, pattern = "^MT-")
+seu[["percent.ribo"]] <- PercentageFeatureSet(seu, pattern = "^RP[SL]")
+
+hb_genes <- grep("^HB", rownames(seu), value = TRUE)
+hb_genes <- hb_genes[!grepl("^HBP", hb_genes)]
+seu[["percent.hb"]] <- PercentageFeatureSet(seu, features = hb_genes)
+
+
 plot_qc_prepost(seu, "pre_QC")
 
 saveRDS(seu, file = "data/seu_before_filtering.rds")
@@ -157,12 +161,44 @@ is_outlier_mad <- function(x, nmads = 5, type = c("both", "lower", "upper")){
   }
 }
 
-out_low_counts <- is_outlier_mad(seu$nCount_RNA, nmads = 5, type = "both")
-out_low_genes <- is_outlier_mad(seu$nFeature_RNA, nmads = 5, type = "both")
+is_outlier_mad_by_group <- function (x, group, nmads = 5, type = c("both", "lower", "upper")) {
+  type <- match.arg(type)
+  groups <- unique(group)
 
-out_high_mt <- is_outlier_mad(seu$percent.mt, nmads = 5, type = "upper")
-out_high_ribo <- is_outlier_mad(seu$percent.ribo, nmads = 5, type = "upper")
-out_high_hb <- is_outlier_mad(seu$percent.hb, nmads = 5, type = "upper")
+  out <- rep(FALSE, length(x))
+
+  for(g in groups) {
+    idx <- which(group == g) & !is.na(x)
+    if(length(idx) == 0) {
+      next
+    }
+
+    med <- median(x[idx], na.rm = TRUE)
+    madv <- mad(x[idx], constant = 1, na.rm = TRUE)
+    if (madv == 0 || is.na(madv)) {
+      next
+    }
+    lower <- med - nmads * madv
+    upper <- med + nmads * madv
+
+    if(type == "both") {
+      out[idx] <- x[idx] < lower | x[idx] > upper
+    } else if(type == "lower") {
+      out[idx] <- x[idx] < lower
+    } else {
+      out[idx] <- x[idx] > upper
+    }
+  }
+
+  return(out)
+}
+
+out_low_counts <- is_outlier_mad_by_group(seu$nCount_RNA, seu@$Batch, nmads = 5, type = "lower")
+out_low_genes <- is_outlier_mad_by_group(seu$nFeature_RNA, seu@$Batch, nmads = 5, type = "lower")
+
+out_high_mt <- is_outlier_mad_by_group(seu$percent.mt, seu@$Batch, nmads = 5, type = "upper")
+out_high_ribo <- is_outlier_mad_by_group(seu$percent.ribo, seu@$Batch, nmads = 5, type = "upper")
+out_high_hb <- is_outlier_mad_by_group(seu$percent.hb, seu@$Batch, nmads = 5, type = "upper")
 
 seu$qc_outlier <- out_low_counts | out_low_genes | out_high_mt | out_high_hb | out_high_ribo
 
@@ -228,7 +264,7 @@ corrected <- adjustCounts(sc, roundToInt = TRUE)
 rm(tod, seu, soupx_groups) 
 gc()
 
-seu_sx <- CreateSeuratObject(counts = corrected)
+seu_sx <- CreateSeuratObject(counts = corrected, meta.data = seu@meta.data[colnames(corrected), , drop=FALSE])
 
 rm(seu)
 gc()
@@ -241,19 +277,13 @@ seu_sx <- seu_sx[keep, ]
 # qc after soup
 
 seu_sx[["percent.mt"]] <- PercentageFeatureSet(seu_sx, pattern = "^MT-")
-seu_sx[["percent.ribo"]] <- PercentageFeatureSet(seu_sx, pattern = "^RP[SL]")
-hb_genes <- grep("^HB", rownames(seu_sx), value = TRUE)
-hb_genes <- hb_genes[!grepl("^HBP", hb_genes)]
-seu_sx[["percent.hb"]] <- PercentageFeatureSet(seu_sx, features = hb_genes)
 
-out_low_counts <- is_outlier_mad(seu_sx$nCount_RNA, nmads = 5, type = "both")
-out_low_genes <- is_outlier_mad(seu_sx$nFeature_RNA, nmads = 5, type = "both")
+out_low_counts <- is_outlier_mad_by_group(seu_sx$nCount_RNA, seu_sx@$Batch, nmads = 5, type = "lower")
+out_low_genes <- is_outlier_mad_by_group(seu_sx$nFeature_RNA, seu_sx@$Batch, nmads = 5, type = "lower")
 
-out_high_mt <- is_outlier_mad(seu_sx$percent.mt, nmads = 5, type = "upper")
-out_high_ribo <- is_outlier_mad(seu_sx$percent.ribo, nmads = 5, type = "upper")
-out_high_hb <- is_outlier_mad(seu_sx$percent.hb, nmads = 5, type = "upper")
+out_high_mt <- is_outlier_mad_by_group(seu_sx$percent.mt, seu_sx@$Batch, nmads = 5, type = "upper")
 
-seu_sx$qc_outlier <- out_low_counts | out_low_genes | out_high_mt | out_high_hb | out_high_ribo
+seu_sx$qc_outlier <- out_low_counts | out_low_genes | out_high_mt 
 seu_sx <- subset(seu_sx, subset = !qc_outlier)
 
 saveRDS(seu_sx, file = "data/seu_after_soup.rds")
@@ -357,6 +387,15 @@ seu_sx <- ScaleData(seu_sx, features = hvgs_genes) #, vars.to.regress = c("perce
 
 seu_sx <- RunPCA(seu_sx, features = hvgs_genes)
 
+dims.use <- 1:20
+seu_sx <- RunHarmony(seu_sx, group.by.vars = "donor")
+
+seu_sx <- FindNeighbors(seu_sx, reduction="harmony", dims = dims.use)
+
+seu_sx <- FindClusters(seu_sx, resolution = c(0.5, 1.0, 1.5, 2.0)) # use leiden? currently louvain
+
+seu_sx <- RunUMAP(seu_sx, dims = dims.use, reduction="harmony")
+
 dev_sorted <- sort(dev, decreasing = TRUE)
 
 df_rank <- data.frame(
@@ -410,15 +449,8 @@ p <- ggplot(df_top, aes(x = deviance)) +
 
 save_plot(p, "HVG_deviance_hist_topflag.png")
 
-
-seu_sx <- FindNeighbors(seu_sx, dims = dims.use)
-
-seu_sx <- FindClusters(seu_sx, resolution = c(0.5, 1.0, 1.5, 2.0)) # use leiden? currently louvain
-
 p <- clustree(seu_sx, prefix = "RNA_snn_res.")
 save_plot(p, "clustree_resolutions.png", width = 8, height = 8)
-
-seu_sx <- RunUMAP(seu_sx, dims = dims.use)
 
 p <- DimPlot(seu_sx, group.by = "RNA_snn_res.0.5",
              reduction = "umap", label = TRUE) +
@@ -487,7 +519,7 @@ save_plot(p, "QC_post_violin_counts_mt.png", width = 10, height = 5)
 p <- VlnPlot(
   seu_sx,
   features = "percent.mt",
-  group.by = "donor_time",dims.use
+  group.by = "donor_time",
   pt.size = 0,
   ncol = 1
 ) + ggtitle("Post-QC: percent_final.mt per sample")
@@ -521,5 +553,5 @@ p <- VlnPlot(
 
 save_plot(p, "QC_pre_violin_count.png", width = 10, height = 5)
 
-saveRDS(seu_sx, file = "data/seu_sx_final_new.rds")
+saveRDS(seu_sx, file = "data/seu_sx_integration.rds")
 # seu_sx <- readRDS("data/seu_sx_final_new.rds")
