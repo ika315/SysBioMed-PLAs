@@ -1,0 +1,2 @@
+"Method","Signature","Ext","Mode","AUC","F1","Prec","Rec","TP","FP","FN","TN","Threshold_Used","Threshold_Value","Runtime_Min"
+"UCell","MANNE_UP",FALSE,"gmm_immune_dual",0.424689944598081,0.792802304710478,0.826836558124902,0.761459118039057,26281,5504,8233,85540,"gmm_immune_dual",-1.27807891699674,38.7592749754588
