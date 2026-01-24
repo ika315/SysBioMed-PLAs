@@ -326,7 +326,7 @@ dev.off()
 
 png(paste0(OUT_DIR, "13_Balanced_Accuracy.png"), 1000, 600)
 
-p13 <- ggplot(ct_summary, aes(x = reorder(celltype_clean, Balanced_Accuracy), 
+p13 <- ggplot(ct_data, aes(x = reorder(celltype_clean, Balanced_Accuracy), 
                              y = Balanced_Accuracy)) + 
   geom_col(fill="steelblue") + 
   coord_flip() + 
@@ -338,7 +338,7 @@ dev.off()
 
 png(paste0(OUT_DIR, "14_Accuracy_Dotplot.png"), 1000, 700)
 
-p14 <- ggplot(ct_summary, aes(x = reorder(celltype_clean, Balanced_Accuracy), 
+p14 <- ggplot(ct_data, aes(x = reorder(celltype_clean, Balanced_Accuracy), 
                              y = Balanced_Accuracy, 
                              size = n)) + 
   geom_point(color="darkblue") + 
