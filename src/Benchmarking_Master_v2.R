@@ -154,8 +154,8 @@ if (THRESH_MODE == "youden") {
         }
     }
 } else if (THRESH_MODE == "gmm_dist_platelet" || THRESH_MODE == "gmm_dist_dual"){
-    auc_obs <- as.numeric(getAUC(auc_final)[1, ])
-    auc_imm <- as.numeric(getAUC(auc_imm)[1, ])
+    auc_obs <- pbmc$Raw_Score
+    auc_imm <- pbmc$Immune_Score
 
     fit_plat <- Mclust(auc_obs, G = 2)
     plat_high <- which.max(fit_plat$parameters$mean)
@@ -170,15 +170,20 @@ if (THRESH_MODE == "youden") {
         pbmc$Immune_High <- FALSE
         pbmc$Immune_High[idx] <- fit_imm$classification == imm_high
     }
-
 }
 
-if(THRESH_MODE %in% c("gmm_dist_platelet", "gmm_dist_dual")) {
-    pbmc$Prediction <- factor(ifelse((pbmc$Platelet_High) & (pbmc$Immune_High), "Positive", "Negative"),levels = c("Negative","Positive"))
+
+positive_condition <- if(THRESH_MODE %in% c("gmm_dist_platelet", "gmm_dist_dual")) {
+   if(THRESH_MODE == "gmm_dist_platelet") {
+       pbmc$Platelet_High
+   } else {
+       (pbmc$Platelet_High) & (pbmc$Immune_High)
+   }
 } else {
-    pbmc$Prediction <- ifelse((pbmc$Z_Score > THRESHOLD_Z) & (pbmc$Immune_Z > THRESHOLD_I), "Positive", "Negative")
+    (pbmc$Z_Score > THRESHOLD_Z) & (pbmc$Immune_Z > THRESHOLD_I)
 }
-#pbmc$Prediction <- ifelse(pbmc$Z_Score > THRESHOLD_Z, "Positive", "Negative")
+
+pbmc$Prediction <- factor(ifelse(positive_condition, "Positive", "Negative"),levels = c("Negative","Positive"))
 
 pbmc$Error_Type <- case_when(
     pbmc$Prediction == "Positive" & pbmc[[GT_COLUMN]] == POSITIVE_VAL ~ "TP",
