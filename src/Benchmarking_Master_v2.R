@@ -10,6 +10,7 @@ library(pROC)
 library(dplyr)
 library(ggplot2)
 library(pheatmap)
+library(tidyr)
 
 args <- commandArgs(trailingOnly = TRUE)
 METHOD_NAME    <- if(length(args) >= 1) args[1] else "AUCell"
@@ -21,7 +22,7 @@ THRESH_MODE    <- if(length(args) >= 5) args[5] else "youden"
 # --- KONFIGURATION ---
 GT_COLUMN    <- "pla.status"
 POSITIVE_VAL <- "PLA"
-PATH_DATA    <- "~/SysBioMed-PLAs/data/seu_sx_final.rds"
+PATH_DATA    <- "~/SysBioMed-PLAs/data/seu_sx_integration.rds"
 
 # --- ORDNERSTRUKTUR AUTOMATISCH ERSTELLEN ---
 OUT_DIR <- paste0("plots/Platelet_Main/", SIG_NAME, "/", METHOD_NAME, "_Ext", USE_EXTENSION, "_", THRESH_MODE, "/")
@@ -45,6 +46,12 @@ source(file.path(base_dir, "src", "read_and_extend_gene_list.R"))
 PATH_SIG <- file.path(base_dir, "data", paste0(SIG_FILE_BASE, ".csv"))
 genes <- read_gene_list(PATH_SIG)
 
+# --- Immune Config --- 
+IMMUNE_SIG <- "GOBP_LEUKOCYTE_ACTIVATION_INVOLVED_IN_INFLAMMATORY_RESPONSE.v2025.1.Hs"
+PATH_IMMUNE_SIG <- file.path(base_dir, "data", paste0(IMMUNE_SIG, ".csv"))
+immune_genes <- read_gene_list(PATH_IMMUNE_SIG)
+immune_genes <- intersect(immune_genes, rownames(pbmc))
+
 # --- SCORING LOGIK ---
 print(paste("--- Calculating Scores using", METHOD_NAME, "---"))
 
@@ -53,12 +60,23 @@ if (METHOD_NAME == "AUCell" || METHOD_NAME == "WeightedAUCell") {
     rankings <- AUCell_buildRankings(expression_matrix, plotStats=FALSE)
     auc_orig <- AUCell_calcAUC(list(Platelet_Orig = genes), rankings)
     pbmc$Raw_Score_Original <- as.numeric(getAUC(auc_orig)[1, ])
+
+    auc_imm <- AUCell_calcAUC(list(Immune_Score = immune_genes), rankings)
+    pbmc$Immune_Score <- as.numeric(getAUC(auc_imm)[1, ])
+
 } else if (METHOD_NAME == "UCell") {
     pbmc <- AddModuleScore_UCell(pbmc, features = list(Platelet_Orig = genes), name = NULL)
     pbmc$Raw_Score_Original <- pbmc$Platelet_Orig
+
+    pbmc <- AddModuleScore_UCell(pbmc, features = list(Immune_Score = immune_genes), name = NULL)
+    pbmc$Immune_Score <- pbmc$Immune_Score 
+
 } else if (METHOD_NAME == "AddModuleScore") {
     pbmc <- AddModuleScore(pbmc, features = list(genes), name = "AMS_Orig")
     pbmc$Raw_Score_Original <- pbmc$AMS_Orig1
+
+    pbmc <- AddModuleScore(pbmc, features = list(immune_genes), name = "AMS_Immune")
+    pbmc$Immune_Score <- pbmc$AMS_Immune1
 }
 
 # 2. Schritt: Gensequenz-Erweiterung (optional)
@@ -88,20 +106,57 @@ if (METHOD_NAME == "AUCell" || METHOD_NAME == "WeightedAUCell") {
     pbmc <- AddModuleScore(pbmc, features = list(final_genes), name = "AMS")
     pbmc$Raw_Score <- pbmc$AMS1
 }
+
 pbmc$Z_Score <- as.vector(scale(pbmc$Raw_Score))
+pbmc$Immune_Z <- as.vector(scale(pbmc$Immune_Score))
 
 # --- THRESHOLDING & EVALUIERUNG ---
 pbmc$GT_Response <- ifelse(pbmc[[GT_COLUMN]] == POSITIVE_VAL, 1, 0)
 roc_obj <- roc(response = pbmc$GT_Response, predictor = pbmc$Z_Score, direction = "<", quiet = TRUE)
 
+THRESHOLD_I <- -Inf
+
 if (THRESH_MODE == "youden") {
     THRESHOLD_Z <- as.numeric(coords(roc_obj, x = "best", best.method = "youden")$threshold)
-} else {
-    # PLATZHALTER für die neue Logik
-    THRESHOLD_Z <- 1.5 
+} else if (THRESH_MODE == "percentile") {
+    prob_cutoff <- 0.90 
+    THRESHOLD_Z <- as.numeric(quantile(pbmc$Z_Score, probs = prob_cutoff))
+} else if (THRESH_MODE == "manual") {
+    # MAD-Ansatz: Robust gegen Ausreißer (die PLAs)
+    med <- median(pbmc$Z_Score)
+    mad_val <- mad(pbmc$Z_Score)
+    THRESHOLD_Z <- med + (1.5 * mad_val) 
+} else if (THRESH_MODE == "gmm_platelet") {
+    z_grid <- unique(quantile(pbmc$Z_Score, probs = seq(0.05, 0.95, 0.05)))
+    best_f1 <- -1
+    for(tz in z_grid) {
+        pred <- pbmc$Z_Score > tz
+        tp <- sum(pred & pbmc$GT_Response == 1); fp <- sum(pred & pbmc$GT_Response == 0)
+        fn <- sum(!pred & pbmc$GT_Response == 1); prec <- tp/(tp+fp); rec <- tp/(tp+fn)
+        f1 <- 2*(prec*rec)/(prec+rec)
+        if(!is.na(f1) && f1 > best_f1) { best_f1 <- f1; THRESHOLD_Z <- tz }
+    }
+} else if (THRESH_MODE == "gmm_immune_dual") {
+    # 2D-Optimierung (Platelet + Immune)
+    z_grid <- unique(quantile(pbmc$Z_Score, probs = seq(0.1, 0.9, 0.1)))
+    i_grid <- unique(quantile(pbmc$Immune_Z, probs = seq(0.1, 0.9, 0.1)))
+    best_f1 <- -1
+    for(tz in z_grid) {
+        for(ti in i_grid) {
+            pred <- (pbmc$Z_Score > tz) & (pbmc$Immune_Z > ti)
+            tp <- sum(pred & pbmc$GT_Response == 1); fp <- sum(pred & pbmc$GT_Response == 0)
+            fn <- sum(!pred & pbmc$GT_Response == 1); prec <- tp/(tp+fp); rec <- tp/(tp+fn)
+            f1 <- 2*(prec*rec)/(prec+rec)
+            if(!is.na(f1) && f1 > best_f1) { 
+                best_f1 <- f1; THRESHOLD_Z <- tz; THRESHOLD_I <- ti 
+            }
+        }
+    }
 }
 
-pbmc$Prediction <- ifelse(pbmc$Z_Score > THRESHOLD_Z, "Positive", "Negative")
+pbmc$Prediction <- ifelse((pbmc$Z_Score > THRESHOLD_Z) & (pbmc$Immune_Z > THRESHOLD_I), "Positive", "Negative")
+#pbmc$Prediction <- ifelse(pbmc$Z_Score > THRESHOLD_Z, "Positive", "Negative")
+
 pbmc$Error_Type <- case_when(
     pbmc$Prediction == "Positive" & pbmc[[GT_COLUMN]] == POSITIVE_VAL ~ "TP",
     pbmc$Prediction == "Positive" & pbmc[[GT_COLUMN]] != POSITIVE_VAL ~ "FP",
@@ -138,7 +193,7 @@ write.csv(data.frame(
 paste0("results/metrics/metrics_", SIG_NAME, "_", METHOD_NAME, "_Ext", USE_EXTENSION, "_", THRESH_MODE, ".csv"), row.names = FALSE)
 
 ct_data <- pbmc@meta.data %>% 
-    group_by(celltype_clean, celltype_l3) %>% 
+    group_by(celltype_clean, celltype.l3) %>% 
     summarise(
         FP_Count = sum(Error_Type == "FP"), 
         TP_Count = sum(Error_Type == "TP"),
@@ -193,21 +248,21 @@ dev.off()
 
 # Density: Nur Platelets
 png(paste0(OUT_DIR, "5a_Density_ZScore_Platelets_Only.png"), 1000, 600)
-print(ggplot(subset(pbmc, celltype_l3 == "Platelets")@meta.data, aes(x=Z_Score)) + 
+print(ggplot(subset(pbmc, celltype.l3 == "Platelet")@meta.data, aes(x=Z_Score)) + 
       geom_density(fill="red", alpha=0.4) + 
       theme_minimal() + 
       labs(title="Z-Score Distribution: Only Platelets (L3 Reference)"))
 dev.off()
 
 png(paste0(OUT_DIR, "5b_Density_RawScore_Platelets_Only.png"), 1000, 600)
-print(ggplot(subset(pbmc, celltype_l3 == "Platelets")@meta.data, aes(x=Raw_Score)) + 
+print(ggplot(subset(pbmc, celltype.l3 == "Platelet")@meta.data, aes(x=Raw_Score)) + 
       geom_density(fill="darkred", alpha=0.4) + 
       theme_minimal() + 
       labs(title="Raw Score Distribution: Only Platelets (L3 Reference)"))
 dev.off()
 
 # Violin: Raw Score pro Zelltyp 
-png(paste0(OUT_DIR, "6_Violin_RawScore_Celltypes.png"), 1200, 600)
+png(paste0(OUT_DIR, "6a_Violin_RawScore_Celltypes.png"), 1200, 600)
 print(VlnPlot(pbmc, features="Raw_Score", group.by="celltype_clean", pt.size=0) + labs(title="Raw Score Distribution"))
 dev.off()
 
@@ -234,24 +289,95 @@ if(nrow(fp_data) > 0) {
 }
 
 # C. PERFORMANCE KURVEN
-png(paste0(OUT_DIR, "10_ROC_Curve.png"), 700, 700)
+png(paste0(OUT_DIR, "9_ROC_Curve.png"), 700, 700)
 plot(roc_obj, col="#E41A1C", lwd=3, main=paste("ROC AUC:", round(auc(roc_obj),3)))
 dev.off()
 
 eval_df <- data.frame(score=pbmc$Z_Score, gt=pbmc$GT_Response) %>% arrange(desc(score)) %>%
            mutate(tp_c=cumsum(gt), fp_c=cumsum(1-gt), prec=tp_c/(tp_c+fp_c), rec=tp_c/sum(gt))
-png(paste0(OUT_DIR, "11_PR_Curve.png"), 800, 700)
+png(paste0(OUT_DIR, "10_PR_Curve.png"), 800, 700)
 print(ggplot(eval_df, aes(x=rec, y=prec)) + geom_line(color="#E41A1C", linewidth=1.2) + 
       theme_minimal() + labs(title="Precision-Recall Curve", x="Recall", y="Precision"))
 dev.off()
 
-png(paste0(OUT_DIR, "12_Error_Composition_Bar.png"), 1200, 700)
+png(paste0(OUT_DIR, "11_Error_Composition_Bar.png"), 1200, 700)
 err_perc <- pbmc@meta.data %>% group_by(celltype_clean, Error_Type) %>% tally() %>% 
             group_by(celltype_clean) %>% mutate(p=n/sum(n)*100)
 print(ggplot(err_perc, aes(x=celltype_clean, y=p, fill=Error_Type)) + geom_bar(stat="identity") + 
       scale_fill_manual(values=c("TP"="#228B22","FP"="#FF4500","FN"="#1E90FF","TN"="#D3D3D3")) + 
       theme_minimal() + theme(axis.text.x=element_text(angle=45, hjust=1)) +
       labs(title="Error Composition per Cell Type", y="Percentage (%)", fill="Error Class"))
+dev.off()
+
+cm_long <- pbmc@meta.data %>%
+  group_by(celltype_clean, Error_Type) %>%
+  tally() %>%
+  pivot_wider(names_from = Error_Type, values_from = n, values_fill = 0) %>%
+  pivot_longer(cols = c(TP, FP, TN, FN), names_to = "entry", values_to = "count") %>%
+  mutate(Truth = ifelse(entry %in% c("TP", "FN"), "GT = 1", "GT = 0"),
+         Pred  = ifelse(entry %in% c("TP", "FP"), "Pred = 1", "Pred = 0"))
+
+png(paste0(OUT_DIR, "12_Confusion_Matrices_CellTypes.png"), 1200, 800)
+print(ggplot(cm_long, aes(x = Pred, y = Truth, fill = count)) +
+  geom_tile() + geom_text(aes(label = count)) +
+  facet_wrap(~ celltype_clean) + scale_fill_viridis_c() +
+  theme_minimal() + labs(title = "Confusion Matrices per Cell Type"))
+dev.off()
+
+png(paste0(OUT_DIR, "13_Balanced_Accuracy.png"), 1000, 600)
+
+p13 <- ggplot(ct_summary, aes(x = reorder(celltype_clean, Balanced_Accuracy), 
+                             y = Balanced_Accuracy)) + 
+  geom_col(fill="steelblue") + 
+  coord_flip() + 
+  theme_minimal() + 
+  labs(title="Balanced Accuracy per Cell Type", x="")
+
+print(p13)
+dev.off()
+
+png(paste0(OUT_DIR, "14_Accuracy_Dotplot.png"), 1000, 700)
+
+p14 <- ggplot(ct_summary, aes(x = reorder(celltype_clean, Balanced_Accuracy), 
+                             y = Balanced_Accuracy, 
+                             size = n)) + 
+  geom_point(color="darkblue") + 
+  coord_flip() + 
+  theme_minimal() + 
+  labs(title="Balanced Accuracy (Size = Cell Count)")
+
+print(p14)
+dev.off()
+
+deltas <- seq(-1.0, 1.0, by = 0.05)
+
+sweep_res <- lapply(deltas, function(d) {
+  curr_tz <- THRESHOLD_Z + d
+  pred <- (pbmc$Z_Score > curr_tz) & (pbmc$Immune_Z > THRESHOLD_I)
+  
+  tp_s <- sum(pred & pbmc$GT_Response == 1, na.rm = TRUE)
+  fp_s <- sum(pred & pbmc$GT_Response == 0, na.rm = TRUE)
+  fn_s <- sum(!pred & pbmc$GT_Response == 1, na.rm = TRUE)
+  
+  p_s <- if((tp_s + fp_s) > 0) tp_s / (tp_s + fp_s) else 0
+  r_s <- if((tp_s + fn_s) > 0) tp_s / (tp_s + fn_s) else 0
+  f1_s <- if((p_s + r_s) > 0) 2 * (p_s * r_s) / (p_s + r_s) else 0
+  
+  data.frame(delta = d, Precision = p_s, Recall = r_s, F1 = f1_s)
+}) %>% bind_rows()
+
+# 2. Plotting
+png(paste0(OUT_DIR, "15_PR_Sweep.png"), 900, 700)
+
+p15 <- ggplot(sweep_res, aes(x = Recall, y = Precision)) + 
+  geom_path(color = "red", linewidth = 1) + 
+  geom_point(aes(alpha = (delta == 0)), size = 3) + 
+  theme_minimal() + 
+  labs(title = "Threshold Stability Sweep",
+       subtitle = "Roter Punkt markiert den gewählten optimalen Threshold") +
+  guides(alpha = "none")
+
+print(p15)
 dev.off()
 
 message("Done! Alle Plots in: ", OUT_DIR)

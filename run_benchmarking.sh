@@ -1,20 +1,27 @@
 #!/bin/bash
-#SBATCH --job-name=Benchmarking_Bcells
+#SBATCH --job-name=PLA_Benchmarking
 #SBATCH --output=slurm_logs/benchmark_%j.out
 #SBATCH --error=slurm_logs/benchmark_%j.err
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=10      # Hochgesetzt für die Scoring-Methoden
-#SBATCH --mem=80G               # Angemessener RAM für große Seurat-Objekte
-#SBATCH --time=06:00:00         # Maximale Laufzeit
+#SBATCH --cpus-per-task=10
+#SBATCH --mem=80G
+#SBATCH --time=06:00:00
 
+# Conda Umgebung aktivieren
 source /opt/mambaforge/etc/profile.d/conda.sh
 conda activate pla
 
-echo "Starte R-Skript: Benchmarking_Master.R"
-echo "Verwende Umgebung: $CONDA_DEFAULT_ENV"
+METHOD=$1
+SIG_NAME=$2
+SIG_FILE=$3
+USE_EXT=$4
+THRESH=$5
 
-# Ausführen des R-Skripts mit dem korrekten Rscript-Pfad aus dem Conda-Environment
-$(which Rscript) src/Benchmarking_Master.R
+echo "Starte R-Skript: Benchmarking_Master_v2.R"
+echo "Methode: $METHOD | Signature: $SIG_NAME | Extension: $USE_EXT"
+echo "Job-ID: $SLURM_JOB_ID"
 
-echo "Job Benchmakring beendet."
+# R-Skript ausführen
+$(which Rscript) src/Benchmarking_Master_v2.R "$METHOD" "$SIG_NAME" "$SIG_FILE" "$USE_EXT" "$THRESH"
 
+echo "Job für $METHOD beendet."

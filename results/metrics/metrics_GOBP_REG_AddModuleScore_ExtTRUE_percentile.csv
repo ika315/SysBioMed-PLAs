@@ -1,0 +1,2 @@
+"Method","Signature","Ext","Mode","AUC","F1","Prec","Rec","TP","FP","FN","TN","Threshold_Used","Threshold_Value","Runtime_Min"
+"AddModuleScore","GOBP_REG",TRUE,"percentile",0.942258312903091,0.457701295942214,0.857916533928003,0.312105232659211,10772,1784,23742,89260,"percentile",0.732418439856072,109.467568385601
