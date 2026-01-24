@@ -195,13 +195,17 @@ paste0("results/metrics/metrics_", SIG_NAME, "_", METHOD_NAME, "_Ext", USE_EXTEN
 ct_data <- pbmc@meta.data %>% 
     group_by(celltype_clean, celltype.l3) %>% 
     summarise(
-        FP_Count = sum(Error_Type == "FP"), 
-        TP_Count = sum(Error_Type == "TP"),
-        Mean_Z = mean(Z_Score),
-        Cell_Count = n(),
+        TP = sum(Error_Type == "TP", na.rm = TRUE),
+        FP = sum(Error_Type == "FP", na.rm = TRUE),
+        FN = sum(Error_Type == "FN", na.rm = TRUE),
+        TN = sum(Error_Type == "TN", na.rm = TRUE),
+        Mean_Z = mean(Z_Score, na.rm = TRUE),
+        n = n(),
         .groups = "drop" 
     ) %>%
     mutate(
+        Accuracy = (TP + TN) / n,
+        Balanced_Accuracy = 0.5 * ((TP / (TP + FN + 1e-6)) + (TN / (TN + FP + 1e-6))),
         Method = METHOD_NAME, 
         Signature = SIG_NAME, 
         Ext = USE_EXTENSION, 

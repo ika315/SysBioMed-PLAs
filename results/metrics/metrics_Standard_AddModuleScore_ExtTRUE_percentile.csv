@@ -1,0 +1,2 @@
+"Method","Signature","Ext","Mode","AUC","F1","Prec","Rec","TP","FP","FN","TN","Threshold_Used","Threshold_Value","Runtime_Min"
+"AddModuleScore","Standard",TRUE,"percentile",0.923457838466308,0.43743360951774,0.819926728257407,0.298284754012864,10295,2261,24219,88783,"percentile",0.440084489723375,155.184893838565

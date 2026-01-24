@@ -1,0 +1,2 @@
+"Method","Signature","Ext","Mode","AUC","F1","Prec","Rec","TP","FP","FN","TN","Threshold_Used","Threshold_Value","Runtime_Min"
+"UCell","Standard",TRUE,"percentile",0.922986853048698,0.450690461015509,0.844775406180312,0.307324563945066,10607,1949,23907,89095,"percentile",0.643303970131385,185.207153741519
