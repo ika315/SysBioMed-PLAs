@@ -11,13 +11,14 @@ library(dplyr)
 library(ggplot2)
 library(pheatmap)
 library(tidyr)
+library(mclust)
 
 args <- commandArgs(trailingOnly = TRUE)
 METHOD_NAME    <- if(length(args) >= 1) args[1] else "AUCell"
-SIG_NAME       <- if(length(args) >= 2) args[2] else "MANNE_UP"
-SIG_FILE_BASE  <- if(length(args) >= 3) args[3] else "MANNE_COVID19_COMBINED_COHORT_VS_HEALTHY_DONOR_PLATELETS_UP.v2025.1.Hs"
+SIG_NAME       <- if(length(args) >= 2) args[2] else "MANNE_DN"
+SIG_FILE_BASE  <- if(length(args) >= 3) args[3] else "MANNE_COVID19_COMBINED_COHORT_VS_HEALTHY_DONOR_PLATELETS_DN.v2025.1.Hs"
 USE_EXTENSION  <- if(length(args) >= 4) as.logical(args[4]) else TRUE
-THRESH_MODE    <- if(length(args) >= 5) args[5] else "youden" 
+THRESH_MODE    <- if(length(args) >= 5) args[5] else "gmm_dist_dual" 
 
 # --- KONFIGURATION ---
 GT_COLUMN    <- "pla.status"
@@ -126,7 +127,7 @@ if (THRESH_MODE == "youden") {
     med <- median(pbmc$Z_Score)
     mad_val <- mad(pbmc$Z_Score)
     THRESHOLD_Z <- med + (1.5 * mad_val) 
-} else if (THRESH_MODE == "gmm_platelet") {
+} else if (THRESH_MODE == "null_dist_platelet") {
     z_grid <- unique(quantile(pbmc$Z_Score, probs = seq(0.05, 0.95, 0.05)))
     best_f1 <- -1
     for(tz in z_grid) {
@@ -136,7 +137,7 @@ if (THRESH_MODE == "youden") {
         f1 <- 2*(prec*rec)/(prec+rec)
         if(!is.na(f1) && f1 > best_f1) { best_f1 <- f1; THRESHOLD_Z <- tz }
     }
-} else if (THRESH_MODE == "gmm_immune_dual") {
+} else if (THRESH_MODE == "null_dist_immune_dual") {
     # 2D-Optimierung (Platelet + Immune)
     z_grid <- unique(quantile(pbmc$Z_Score, probs = seq(0.1, 0.9, 0.1)))
     i_grid <- unique(quantile(pbmc$Immune_Z, probs = seq(0.1, 0.9, 0.1)))
@@ -152,9 +153,31 @@ if (THRESH_MODE == "youden") {
             }
         }
     }
+} else if (THRESH_MODE == "gmm_dist_platelet" || THRESH_MODE == "gmm_dist_dual"){
+    auc_obs <- as.numeric(getAUC(auc_final)[1, ])
+    auc_imm <- as.numeric(getAUC(auc_imm)[1, ])
+
+    fit_plat <- Mclust(auc_obs, G = 2)
+    plat_high <- which.max(fit_plat$parameters$mean)
+    pbmc$Platelet_High <- fit_plat$classification == plat_high
+
+    if(THRESH_MODE == "gmm_dist_dual") {
+        idx <- which(pbmc$Platelet_High)
+
+        fit_imm <- Mclust(auc_imm[idx], G = 2)
+        imm_high <- which.max(fit_imm$parameters$mean)
+
+        pbmc$Immune_High <- FALSE
+        pbmc$Immune_High[idx] <- fit_imm$classification == imm_high
+    }
+
 }
 
-pbmc$Prediction <- ifelse((pbmc$Z_Score > THRESHOLD_Z) & (pbmc$Immune_Z > THRESHOLD_I), "Positive", "Negative")
+if(THRESH_MODE %in% c("gmm_dist_platelet", "gmm_dist_dual")) {
+    pbmc$Prediction <- factor(ifelse((pbmc$Platelet_High) & (pbmc$Immune_High), "Positive", "Negative"),levels = c("Negative","Positive"))
+} else {
+    pbmc$Prediction <- ifelse((pbmc$Z_Score > THRESHOLD_Z) & (pbmc$Immune_Z > THRESHOLD_I), "Positive", "Negative")
+}
 #pbmc$Prediction <- ifelse(pbmc$Z_Score > THRESHOLD_Z, "Positive", "Negative")
 
 pbmc$Error_Type <- case_when(
