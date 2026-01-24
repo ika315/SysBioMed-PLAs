@@ -154,9 +154,6 @@ if(METHOD_NAME == "WeightedAUCell") {
     pbmc$Raw_Score <- pbmc$AMS_Final1
 }
 
-pbmc$Z_Score <- as.vector(scale(pbmc$Raw_Score))
-roc_obj <- roc(response = pbmc$GT_Response, predictor = pbmc$Z_Score, direction = "<", quiet = TRUE)
-
 set.seed(42)
 
 # observed AUC
@@ -203,6 +200,10 @@ fn <- sum(pbmc$Error_Type == "FN", na.rm = TRUE)
 Prec_Val <- if((tp + fp) > 0) tp / (tp + fp) else 0
 Rec_Val  <- if((tp + fn) > 0) tp / (tp + fn) else 0
 F1_Score <- if((Prec_Val + Rec_Val) > 0) 2 * Prec_Val * Rec_Val / (Prec_Val + Rec_Val) else 0
+
+
+pbmc$Z_Score <- as.vector(scale(pbmc$Raw_Score))
+roc_obj <- roc(response = pbmc$GT_Response, predictor = pbmc$Z_Score, direction = "<", quiet = TRUE)
 
 performance_data <- data.frame(
     Method = METHOD_NAME,
@@ -804,3 +805,25 @@ p <- ggplot(df2, aes(x = Prediction, y = Value, fill = Prediction)) +
 
 ggsave(filename = paste0(OUT_DIR, SIG_NAME, "_", METHOD_NAME, "_Score_Distributions_by_Prediction.png"),
          plot = p, width = 8, height = 6)
+
+
+df2d <- data.frame(
+  Platelet = auc_obs,
+  Immune   = auc_imm,
+  GMM      = pbmc$Prediction,
+  GT       = pbmc$GT_Class
+)
+
+df2d$Error <- dplyr::case_when(
+  df2d$GMM == "Positive" & df2d$GT == "Positive" ~ "TP",
+  df2d$GMM == "Positive" & df2d$GT == "Negative" ~ "FP",
+  df2d$GMM == "Negative" & df2d$GT == "Positive" ~ "FN",
+  TRUE                                           ~ "TN"
+)
+
+ggplot(df2d, aes(x = Platelet, y = Immune, color = Error)) +
+  geom_point(alpha = 0.4, size = 0.6) +
+  theme_classic() +
+  labs(title = "GMM classification errors in score space",
+       x = "Platelet AUCell AUC",
+       y = "Immune AUCell AUC")
