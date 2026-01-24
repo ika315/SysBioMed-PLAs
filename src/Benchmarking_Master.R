@@ -182,9 +182,7 @@ pbmc$Prediction <- factor(
   levels = c("Negative","Positive")
 )
 
-thr_auc
 table(pbmc$Prediction)
-THRESHOLD_Z <- thr_auc
 # Metrics and Threshold
 #roc_obj <- roc(response = pbmc$GT_Response, predictor = pbmc$Z_Score, direction = "<", quiet = TRUE)
 #THRESHOLD_Z <- as.numeric(coords(roc_obj, x = "best", best.method = "youden")$threshold)
