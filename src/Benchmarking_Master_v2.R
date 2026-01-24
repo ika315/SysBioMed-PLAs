@@ -160,6 +160,7 @@ if (THRESH_MODE == "youden") {
     fit_plat <- Mclust(auc_obs, G = 2)
     plat_high <- which.max(fit_plat$parameters$mean)
     pbmc$Platelet_High <- fit_plat$classification == plat_high
+    pbmc$Immune_High <- TRUE
 
     if(THRESH_MODE == "gmm_dist_dual") {
         idx <- which(pbmc$Platelet_High)
@@ -171,7 +172,6 @@ if (THRESH_MODE == "youden") {
         pbmc$Immune_High[idx] <- fit_imm$classification == imm_high
     }
 }
-
 
 positive_condition <- if(THRESH_MODE %in% c("gmm_dist_platelet", "gmm_dist_dual")) {
    if(THRESH_MODE == "gmm_dist_platelet") {
