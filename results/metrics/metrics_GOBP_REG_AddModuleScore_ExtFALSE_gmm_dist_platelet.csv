@@ -1,0 +1,2 @@
+"Method","Signature","Ext","Mode","AUC","F1","Prec","Rec","TP","FP","FN","TN","Threshold_Used","Threshold_Value","Runtime_Min"
+"AddModuleScore","GOBP_REG",FALSE,"gmm_dist_platelet",0.940683913696979,0.736160047124017,0.590335730156231,0.977661238917541,33743,23416,771,67628,"gmm_dist_platelet",-1.75450888191838,2.15008410215378
