@@ -1,0 +1,2 @@
+"Method","Signature","Ext","Mode","AUC","F1","Prec","Rec","TP","FP","FN","TN","Threshold_Used","Threshold_Value","Runtime_Min"
+"AddModuleScore","GNATENKO",TRUE,"gmm_dist_platelet",0.774237386935959,0.0243752788933512,0.325633383010432,0.0126615286550385,437,905,34077,90139,"gmm_dist_platelet",1.47971404984261,2.40692801475525

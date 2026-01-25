@@ -1,0 +1,2 @@
+"Method","Signature","Ext","Mode","AUC","F1","Prec","Rec","TP","FP","FN","TN","Threshold_Used","Threshold_Value","Runtime_Min"
+"AddModuleScore","GNATENKO",FALSE,"youden",0.759505783085861,0.595988538681948,0.446005065622841,0.897954453265342,30992,38496,3522,52548,"youden",-0.126354160781571,2.25787921746572

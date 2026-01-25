@@ -11,6 +11,7 @@ library(ggrepel)
 
 # --- CONFIGURATION ---
 METHODS_TO_COMPARE <- c("AUCell", "UCell", "AddModuleScore")
+CURRENT_SIG <- "HP_ABNORMAL"
 
 # Path to results
 RESULTS_DIR <- "results/"

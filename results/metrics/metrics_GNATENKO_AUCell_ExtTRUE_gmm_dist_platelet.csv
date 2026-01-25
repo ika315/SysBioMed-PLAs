@@ -1,0 +1,2 @@
+"Method","Signature","Ext","Mode","AUC","F1","Prec","Rec","TP","FP","FN","TN","Threshold_Used","Threshold_Value","Runtime_Min"
+"AUCell","GNATENKO",TRUE,"gmm_dist_platelet",0.773077941446558,0.0181919955219703,0.267269736842105,0.00941646867937648,325,891,34189,90153,"gmm_dist_platelet",-2.40237601488033,4.98040859301885
