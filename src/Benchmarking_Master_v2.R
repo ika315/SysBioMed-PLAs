@@ -170,7 +170,10 @@ if (THRESH_MODE == "youden") {
 
         pbmc$Immune_High <- FALSE
         pbmc$Immune_High[idx] <- fit_imm$classification == imm_high
+        THRESHOLD_I <- min(pbmc$Immune_Z[pbmc$Immune_High], na.rm = TRUE)
     }
+
+    THRESHOLD_Z <- min(pbmc$Z_Score[pbmc$Platelet_High], na.rm = TRUE)
 }
 
 positive_condition <- if(THRESH_MODE %in% c("gmm_dist_platelet", "gmm_dist_dual")) {
@@ -265,18 +268,33 @@ dev.off()
 png(paste0(OUT_DIR, "4a_Density_ZScore_PLA_Status.png"), 1200, 800)
 print(ggplot(pbmc@meta.data, aes(x=Z_Score, fill=!!sym(GT_COLUMN))) + 
       geom_density(alpha=0.5) + 
-      facet_wrap(~celltype_clean) + 
       theme_minimal() + 
-      labs(title="Z-Score Distribution: PLA vs Platelet-free", subtitle=paste("Signature:", SIG_NAME)))
+      scale_fill_manual(values=c("PLA"="#FF4B4B", "platelet-free"="#4B8BFF")) +
+      geom_vline(xintercept=THRESHOLD_Z, linetype="dashed", color="red", size=1) +
+      labs(title="Global Z-Score Distribution", 
+           subtitle=paste("Red Line = Current Threshold:", round(THRESHOLD_Z, 2)),
+           x="Z-Score", y="Density", fill="PLA Status"))
 dev.off()
+#      geom_density(alpha=0.5) + 
+#      facet_wrap(~celltype_clean) + 
+#      theme_minimal() + 
+#      labs(title="Z-Score Distribution: PLA vs Platelet-free", subtitle=paste("Signature:", SIG_NAME)))
+#dev.off()
 
 png(paste0(OUT_DIR, "4b_Density_RawScore_PLA_Status.png"), 1200, 800)
 print(ggplot(pbmc@meta.data, aes(x=Raw_Score, fill=!!sym(GT_COLUMN))) + 
       geom_density(alpha=0.5) + 
-      facet_wrap(~celltype_clean) + 
       theme_minimal() + 
-      labs(title="Raw Score Distribution: PLA vs Platelet-free", subtitle=paste("Method:", METHOD_NAME)))
+      scale_fill_manual(values=c("PLA"="#FF4B4B", "platelet-free"="#4B8BFF")) +
+      labs(title="Global Raw Score Distribution", 
+           x="Raw Score", y="Density", fill="PLA Status"))
 dev.off()
+#print(ggplot(pbmc@meta.data, aes(x=Raw_Score, fill=!!sym(GT_COLUMN))) + 
+#      geom_density(alpha=0.5) + 
+#      facet_wrap(~celltype_clean) + 
+#      theme_minimal() + 
+#      labs(title="Raw Score Distribution: PLA vs Platelet-free", subtitle=paste("Method:", METHOD_NAME)))
+#dev.off()
 
 # Density: Nur Platelets
 png(paste0(OUT_DIR, "5a_Density_ZScore_Platelets_Only.png"), 1000, 600)
@@ -411,5 +429,19 @@ p15 <- ggplot(sweep_res, aes(x = Recall, y = Precision)) +
 
 print(p15)
 dev.off()
+
+if(THRESH_MODE == "gmm_dist_dual"){
+  png(paste0(OUT_DIR, "18_2D_Scoring_Space.png"), 1000, 800)
+  print(ggplot(pbmc@meta.data, aes(x=Z_Score, y=Immune_Z, color=Error_Type)) +
+    geom_point(alpha=0.4, size=0.8) +
+    scale_color_manual(values=c("TP"="#228B22", "FP"="#FF4500", "FN"="#1E90FF", "TN"="#D3D3D3")) +
+    geom_vline(xintercept=THRESHOLD_Z, linetype="dashed", color="black") +
+    geom_hline(yintercept=THRESHOLD_I, linetype="dashed", color="black") +
+    theme_minimal() +
+    labs(title="2D Classification Space", 
+         subtitle=paste("Vertical: Platelet-Threshold | Horizontal: Immune-Threshold"),
+         x="Platelet Z-Score", y="Immune Z-Score", color="Status"))
+  dev.off()
+}
 
 message("Done! Alle Plots in: ", OUT_DIR)
