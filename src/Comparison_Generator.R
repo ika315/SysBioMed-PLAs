@@ -7,6 +7,7 @@ library(tidyr)
 library(purrr)
 library(pheatmap)
 library(RColorBrewer)
+library(ggrepel)
 
 # Pfade
 METRICS_DIR <- "results/metrics/"
@@ -79,11 +80,11 @@ dev.off()
 
 # --- 3. Computational Comparison ---
 png(file.path(BASE_OUT, "Method_Runtime_Benchmarking.png"), 800, 600, res = 120)
-print(ggplot(all_metrics, aes(x = Method, y = Runtime_Min, fill = Method)) +
+print(ggplot(filter(all_metrics, Ext == FALSE), aes(x = Method, y = Runtime_Min, fill = Method)) +
   geom_boxplot(alpha = 0.6) +
   geom_jitter(width = 0.2, alpha = 0.5) +
   theme_minimal() +
-  labs(title = "Computational Efficiency per Method",
+  labs(title = "Computational Efficiency per Method (Baseline)",
        y = "Runtime in Minutes", x = "Enrichment Method"))
 dev.off()
 
@@ -126,21 +127,62 @@ create_presentation_heatmap <- function(data, ct_col, metric, filename) {
   dev.off()
 }
 
-create_presentation_heatmap(df_heatmap, "celltype_clean", "Balanced_Accuracy", "Heatmap_BA_Clean.png")
-create_presentation_heatmap(df_heatmap, "celltype.l3", "Balanced_Accuracy", "Heatmap_BA_L3.png")
-create_presentation_heatmap(df_heatmap, "celltype_clean", "FP", "Heatmap_FP_Clean.png")
+target_modes <- c("youden", "gmm_dist_dual", "gmm_dist_platelet")
+target_metrics <- c("FP", "TP", "Balanced_Accuracy", "Mean_Z")
+
+for(m in target_modes) {
+  for(met in target_metrics) {
+    create_presentation_heatmap(df_heatmap %>% filter(Mode == m), 
+                                "celltype_clean", met, 
+                                paste0("Heatmap_", met, "_", m, "_Clean.png"))
+  }
+}
 
 # --- 5. Großer Vergleich: Precision vs Recall ---
-png(file.path(BASE_OUT, "Global_Approach_Comparison.png"), 1400, 900, res = 120)
-print(ggplot(all_metrics, aes(x = Prec, y = Rec, color = Mode, shape = Method)) +
+
+#png(file.path(BASE_OUT, "Global_Approach_Comparison.png"), 1400, 900, res = 120)
+#print(ggplot(all_metrics, aes(x = Prec, y = Rec, color = Mode, shape = Method)) +
+#  geom_point(aes(size = F1), alpha = 0.7) +
+#  facet_grid(Ext ~ Signature) +
+#  theme_bw() +
+#  scale_color_brewer(palette = "Set1") +
+#  labs(title = "Universal Performance Comparison",
+#       subtitle = "Precision vs Recall (Faceted by Signature and Extension)",
+#       x = "Precision", y = "Recall (Sensitivity)",
+#       size = "F1-Score", color = "Threshold Mode", shape = "Method"))
+#dev.off()
+
+png(file.path(BASE_OUT, "PR_Comparison_Incl_Youden.png"), 1400, 900, res = 120)
+print(ggplot(filter(all_metrics, Mode %in% c("youden", "gmm_dist_dual", "gmm_dist_platelet")), 
+             aes(x = Prec, y = Rec, color = Mode, shape = Method)) +
   geom_point(aes(size = F1), alpha = 0.7) +
-  facet_grid(Ext ~ Signature) +
-  theme_bw() +
-  scale_color_brewer(palette = "Set1") +
-  labs(title = "Universal Performance Comparison",
-       subtitle = "Precision vs Recall (Faceted by Signature and Extension)",
-       x = "Precision", y = "Recall (Sensitivity)",
-       size = "F1-Score", color = "Threshold Mode", shape = "Method"))
+  facet_grid(Ext ~ Signature) + theme_bw() + scale_color_brewer(palette = "Set1") +
+  labs(title = "Performance: Supervised vs. Unsupervised"))
 dev.off()
+
+png(file.path(BASE_OUT, "PR_Comparison_GMM_Only.png"), 1400, 900, res = 120)
+print(ggplot(filter(all_metrics, Mode %in% c("gmm_dist_dual", "gmm_dist_platelet")), 
+             aes(x = Prec, y = Rec, color = Mode, shape = Method)) +
+  geom_point(aes(size = F1), alpha = 0.7) +
+  facet_grid(Ext ~ Signature) + theme_bw() + scale_color_manual(values=c("#377EB8", "#4DAF4A")) +
+  labs(title = "Unsupervised Discovery: Platelet vs. Dual-Gate"))
+dev.off()
+
+# --- 6. Lollipop Plots ---
+dir.create(file.path(BASE_OUT, "Methods_Detail"), showWarnings = FALSE)
+for(meth in unique(all_metrics$Method)) {
+  meth_data <- all_metrics %>% filter(Method == meth, Ext == TRUE)
+  if(nrow(meth_data) == 0) next
+  
+  png(file.path(BASE_OUT, "Methods_Detail", paste0("Profile_", meth, ".png")), 1200, 800, res = 120)
+  p <- ggplot(meth_data, aes(x = Rec, y = Prec, color = Signature, label = Mode)) +
+    geom_point(aes(size = F1)) + 
+    geom_text_repel(size = 3) +
+    facet_wrap(~Mode) + 
+    theme_bw() + 
+    labs(title = paste("Method Performance Profile:", meth), subtitle = "Extended Lists Only")
+  print(p)
+  dev.off()
+}
 
 print("Vergleichs-Plots wurden erfolgreich erstellt!")
