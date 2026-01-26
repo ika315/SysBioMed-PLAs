@@ -1,2 +1,0 @@
-"Method","Signature","Ext","Mode","AUC","F1","Prec","Rec","TP","FP","FN","TN","Threshold_Used","Threshold_Value","Runtime_Min"
-"AUCell","MANNE_UP",TRUE,"",0.57583672372857,0.298076755721869,0.797894148341409,0.183271622113306,8563,2169,38160,105196,"",1.5,7.47546303272247

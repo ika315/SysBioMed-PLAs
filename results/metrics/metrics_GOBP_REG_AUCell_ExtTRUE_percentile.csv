@@ -1,2 +1,0 @@
-"Method","Signature","Ext","Mode","AUC","F1","Prec","Rec","TP","FP","FN","TN","Threshold_Used","Threshold_Value","Runtime_Min"
-"AUCell","GOBP_REG",TRUE,"percentile",0.931575490326646,0.457508285884253,0.857654930699379,0.311960363910297,10767,1787,23747,89257,"percentile",0.892075836766785,161.231387329102

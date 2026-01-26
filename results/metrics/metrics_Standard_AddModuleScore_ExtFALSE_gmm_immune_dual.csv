@@ -1,2 +1,0 @@
-"Method","Signature","Ext","Mode","AUC","F1","Prec","Rec","TP","FP","FN","TN","Threshold_Used","Threshold_Value","Runtime_Min"
-"AddModuleScore","Standard",FALSE,"gmm_immune_dual",0.911679261636275,0.878559429102975,0.843440940473969,0.916729443124529,31640,5873,2874,85171,"gmm_immune_dual",-0.667285921202252,2.27386759916941
