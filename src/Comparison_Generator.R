@@ -79,43 +79,55 @@ print(ggplot(extension_impact, aes(x = Signature, y = Improvement, fill = Method
 dev.off()
 
 # --- 3. Computational Comparison ---
+
+# 1. Normaler Boxplot
 png(file.path(BASE_OUT, "Method_Runtime_Benchmarking.png"), 800, 600, res = 120)
-print(ggplot(filter(all_metrics, Ext == FALSE), aes(x = Method, y = Runtime_Min, fill = Method)) +
+p1 <- ggplot(filter(all_metrics, Ext == FALSE), aes(x = Method, y = Runtime_Min, fill = Method)) +
   geom_boxplot(alpha = 0.6) +
   geom_jitter(width = 0.2, alpha = 0.5) +
   theme_minimal() +
   labs(title = "Computational Efficiency per Method (Baseline)",
-       y = "Runtime in Minutes", x = "Enrichment Method"))
+       y = "Runtime in Minutes", x = "Enrichment Method")
+print(p1)
 dev.off()
 
+# 2. Log-Scale Boxplot
 png(file.path(BASE_OUT, "Method_Runtime_Benchmarking_Log.png"), 800, 600, res = 120)
-print(ggplot(filter(all_metrics, Ext == FALSE), aes(x = Method, y = Runtime_Min, fill = Method)) +
+p2 <- ggplot(filter(all_metrics, Ext == FALSE), aes(x = Method, y = Runtime_Min, fill = Method)) +
   geom_boxplot(alpha = 0.6, outlier.shape = NA) + 
   geom_jitter(width = 0.2, alpha = 0.5) +
-  scale_y_log10() + # Zeigt kleine und große Werte gleichzeitig gut an
+  scale_y_log10() + 
   theme_minimal() + 
   labs(title = "Computational Efficiency (Baseline Lists)", 
        subtitle = "Y-Axis on Log10 Scale",
-       y = "Runtime in Minutes (Log)", x = "Enrichment Method"))
+       y = "Runtime in Minutes (Log)", x = "Enrichment Method")
+print(p2)
 dev.off()
 
+# 3. Cleveland Dot Plot (FIXED)
 png(file.path(BASE_OUT, "Method_Runtime_Benchmarking_Cleveland.png"), 800, 600, res = 120)
-ggplot(filter(all_metrics, Ext == FALSE), aes(x = Runtime_Min, y = Method, color = Method)) +
+p3 <- ggplot(filter(all_metrics, Ext == FALSE), aes(x = Runtime_Min, y = Method, color = Method)) +
   geom_point(size = 3) +
   theme_light() +
   labs(title = "Method Efficiency Profile", x = "Runtime (Minutes)", y = NULL)
+print(p3) 
+dev.off()  
 
+# 4. Bar Plot mit Error Bars (FIXED)
 runtime_summary <- all_metrics %>%
   filter(Ext == FALSE) %>%
   group_by(Method) %>%
-  summarise(mean_run = mean(Runtime_Min), sd_run = sd(Runtime_Min))
+  summarise(mean_run = mean(Runtime_Min, na.rm = TRUE), 
+            sd_run = sd(Runtime_Min, na.rm = TRUE), .groups = "drop")
 
 png(file.path(BASE_OUT, "Method_Runtime_Benchmarking_Bar_Plot.png"), 800, 600, res = 120)
-ggplot(runtime_summary, aes(x = Method, y = mean_run, fill = Method)) +
+p4 <- ggplot(runtime_summary, aes(x = Method, y = mean_run, fill = Method)) +
   geom_bar(stat = "identity", alpha = 0.8, width = 0.6) +
   geom_errorbar(aes(ymin = mean_run - sd_run, ymax = mean_run + sd_run), width = 0.2) +
   theme_classic() +
   labs(title = "Average Computational Efficiency", y = "Mean Runtime (Min)")
+print(p4) 
+dev.off()  
 
 # --- 4. HEATMAPS: ZELLTYP PERFORMANCE ---
 df_heatmap <- all_ct %>% filter(Ext == TRUE)
