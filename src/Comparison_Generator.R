@@ -88,6 +88,35 @@ print(ggplot(filter(all_metrics, Ext == FALSE), aes(x = Method, y = Runtime_Min,
        y = "Runtime in Minutes", x = "Enrichment Method"))
 dev.off()
 
+png(file.path(BASE_OUT, "Method_Runtime_Benchmarking_Log.png"), 800, 600, res = 120)
+print(ggplot(filter(all_metrics, Ext == FALSE), aes(x = Method, y = Runtime_Min, fill = Method)) +
+  geom_boxplot(alpha = 0.6, outlier.shape = NA) + 
+  geom_jitter(width = 0.2, alpha = 0.5) +
+  scale_y_log10() + # Zeigt kleine und große Werte gleichzeitig gut an
+  theme_minimal() + 
+  labs(title = "Computational Efficiency (Baseline Lists)", 
+       subtitle = "Y-Axis on Log10 Scale",
+       y = "Runtime in Minutes (Log)", x = "Enrichment Method"))
+dev.off()
+
+png(file.path(BASE_OUT, "Method_Runtime_Benchmarking_Cleveland.png"), 800, 600, res = 120)
+ggplot(filter(all_metrics, Ext == FALSE), aes(x = Runtime_Min, y = Method, color = Method)) +
+  geom_point(size = 3) +
+  theme_light() +
+  labs(title = "Method Efficiency Profile", x = "Runtime (Minutes)", y = NULL)
+
+runtime_summary <- all_metrics %>%
+  filter(Ext == FALSE) %>%
+  group_by(Method) %>%
+  summarise(mean_run = mean(Runtime_Min), sd_run = sd(Runtime_Min))
+
+png(file.path(BASE_OUT, "Method_Runtime_Benchmarking_Bar_Plot.png"), 800, 600, res = 120)
+ggplot(runtime_summary, aes(x = Method, y = mean_run, fill = Method)) +
+  geom_bar(stat = "identity", alpha = 0.8, width = 0.6) +
+  geom_errorbar(aes(ymin = mean_run - sd_run, ymax = mean_run + sd_run), width = 0.2) +
+  theme_classic() +
+  labs(title = "Average Computational Efficiency", y = "Mean Runtime (Min)")
+
 # --- 4. HEATMAPS: ZELLTYP PERFORMANCE ---
 df_heatmap <- all_ct %>% filter(Ext == TRUE)
 
@@ -127,14 +156,23 @@ create_presentation_heatmap <- function(data, ct_col, metric, filename) {
   dev.off()
 }
 
+target_cell_columns <- c("celltype_clean", "celltype.l3")
 target_modes <- c("youden", "gmm_dist_dual", "gmm_dist_platelet")
 target_metrics <- c("FP", "TP", "Balanced_Accuracy", "Mean_Z")
 
-for(m in target_modes) {
-  for(met in target_metrics) {
-    create_presentation_heatmap(df_heatmap %>% filter(Mode == m), 
-                                "celltype_clean", met, 
-                                paste0("Heatmap_", met, "_", m, "_Clean.png"))
+for(ct_col in target_cell_columns) {
+  for(m in target_modes) {
+    for(met in target_metrics) {
+      
+      file_name <- paste0("Heatmap_", met, "_", m, "_", ct_col, ".png")
+      
+      create_presentation_heatmap(
+        data = df_heatmap %>% filter(Mode == m),
+        ct_col = ct_col,
+        metric = met,
+        filename = file_name
+      )
+    }
   }
 }
 
@@ -168,21 +206,43 @@ print(ggplot(filter(all_metrics, Mode %in% c("gmm_dist_dual", "gmm_dist_platelet
   labs(title = "Unsupervised Discovery: Platelet vs. Dual-Gate"))
 dev.off()
 
-# --- 6. Lollipop Plots ---
+# --- 6. Perfromance Scatterplot ---
 dir.create(file.path(BASE_OUT, "Methods_Detail"), showWarnings = FALSE)
+
 for(meth in unique(all_metrics$Method)) {
   meth_data <- all_metrics %>% filter(Method == meth, Ext == TRUE)
   if(nrow(meth_data) == 0) next
   
   png(file.path(BASE_OUT, "Methods_Detail", paste0("Profile_", meth, ".png")), 1200, 800, res = 120)
-  p <- ggplot(meth_data, aes(x = Rec, y = Prec, color = Signature, label = Mode)) +
-    geom_point(aes(size = F1)) + 
-    geom_text_repel(size = 3) +
+  p <- ggplot(meth_data, aes(x = Rec, y = Prec, color = Signature)) +
+    geom_point(aes(size = F1), alpha = 0.8) + # Punkte etwas transparenter für Überlagerungen
     facet_wrap(~Mode) + 
     theme_bw() + 
-    labs(title = paste("Method Performance Profile:", meth), subtitle = "Extended Lists Only")
+    scale_size_continuous(range = c(2, 8)) + # Größere Punkte für bessere Sichtbarkeit
+    labs(title = paste("Method Performance Profile:", meth), 
+         subtitle = "Extended Lists Only | Faceted by Threshold Mode",
+         x = "Recall", y = "Precision",
+         size = "F1-Score", color = "Gene Signature") +
+    theme(legend.position = "right")
+  
   print(p)
   dev.off()
 }
+
+# --- 7. SIGNATURE RANKING (Lollipop) ---
+png(file.path(BASE_OUT, "Signature_Performance_Ranking.png"), 1200, 800, res = 120)
+summary_perf <- all_metrics %>%
+  filter(Ext == TRUE) %>%
+  group_by(Signature, Method) %>%
+  summarise(mean_F1 = mean(F1, na.rm=T), .groups = "drop")
+
+print(ggplot(summary_perf, aes(x = reorder(Signature, mean_F1), y = mean_F1, color = Method)) +
+  geom_segment(aes(xend = Signature, yend = 0), size = 1, alpha = 0.3) +
+  geom_point(size = 4) +
+  coord_flip() +
+  theme_minimal() +
+  labs(title = "Average F1-Score per Signature (Extended Lists)",
+       x = "Signature", y = "Mean F1-Score"))
+dev.off()
 
 print("Vergleichs-Plots wurden erfolgreich erstellt!")
