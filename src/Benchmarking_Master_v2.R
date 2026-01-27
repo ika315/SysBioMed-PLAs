@@ -18,7 +18,7 @@ METHOD_NAME    <- if(length(args) >= 1) args[1] else "AUCell"
 SIG_NAME       <- if(length(args) >= 2) args[2] else "MANNE_DN"
 SIG_FILE_BASE  <- if(length(args) >= 3) args[3] else "MANNE_COVID19_COMBINED_COHORT_VS_HEALTHY_DONOR_PLATELETS_DN.v2025.1.Hs"
 USE_EXTENSION  <- if(length(args) >= 4) as.logical(args[4]) else TRUE
-THRESH_MODE    <- if(length(args) >= 5) args[5] else "gmm_dist_dual" 
+THRESH_MODE    <- if(length(args) >= 5) args[5] else "kmeans" 
 
 # --- KONFIGURATION ---
 GT_COLUMN    <- "pla.status"
@@ -174,17 +174,44 @@ if (THRESH_MODE == "youden") {
     }
 
     THRESHOLD_Z <- min(pbmc$Z_Score[pbmc$Platelet_High], na.rm = TRUE)
+} else if (THRESH_MODE == "kmeans"){
+    set.seed(42)
+    km_data <- FetchData(pbmc, vars = c("Z_Score", "Immune_Z")) %>% drop_na()
+
+    km_fit <- kmeans(km_data, centers = 4, nstart = 50, iter.max = 100)
+
+    pbmc$KMeans_Cluster <- NA
+    pbmc$KMeans_Cluster[rownames(km_data)] <- km_fit$cluster
+
+    cluster_stats <- km_data %>%
+        mutate(Cluster = km_fit$cluster) %>%
+        group_by(Cluster) %>%
+        summarise(
+            Mean_Z = mean(Z_Score),
+            Mean_Immune_Z = mean(Immune_Z),
+            Score_Sum = Mean_Z + Mean_Immune_Z
+        )
+
+    positive_cluster <- cluster_stats$Cluster[which.max(cluster_stats$Score_Sum)]
+
+    pbmc$Platelet_High <- pbmc$KMeans_Cluster == positive_cluster
+    pbmc$Immune_High <- pbmc$KMeans_Cluster == positive_cluster
 }
 
-positive_condition <- if(THRESH_MODE %in% c("gmm_dist_platelet", "gmm_dist_dual")) {
-   if(THRESH_MODE == "gmm_dist_platelet") {
-       pbmc$Platelet_High
-   } else {
-       (pbmc$Platelet_High) & (pbmc$Immune_High)
-   }
+positive_condition <- if (THRESH_MODE == "kmeans") {
+    pbmc$KMeans_Cluster == positive_cluster
+
+} else if (THRESH_MODE == "gmm_dist_platelet") {
+    pbmc$Platelet_High
+
+} else if (THRESH_MODE == "gmm_dist_dual") {
+    pbmc$Platelet_High & pbmc$Immune_High
+
 } else {
-    (pbmc$Z_Score > THRESHOLD_Z) & (pbmc$Immune_Z > THRESHOLD_I)
+    (pbmc$Z_Score > THRESHOLD_Z) &
+    (pbmc$Immune_Z > THRESHOLD_I)
 }
+
 
 pbmc$Prediction <- factor(ifelse(positive_condition, "Positive", "Negative"),levels = c("Negative","Positive"))
 
