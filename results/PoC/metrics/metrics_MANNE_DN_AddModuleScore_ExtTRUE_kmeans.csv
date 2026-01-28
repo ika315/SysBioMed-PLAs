@@ -1,0 +1,2 @@
+"Method","Signature","Ext","Mode","AUC","F1","Prec","Rec","TP","FP","FN","TN","Threshold_Used","Threshold_Value","Runtime_Min"
+"AddModuleScore","MANNE_DN",TRUE,"kmeans",0.605010877343397,0.0974124809741248,0.151181102362205,0.0718562874251497,96,539,1240,13653,"kmeans",0.78004614672716,0.810760927200317

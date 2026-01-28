@@ -1,0 +1,2 @@
+"Method","Signature","Ext","Mode","AUC","F1","Prec","Rec","TP","FP","FN","TN","Threshold_Used","Threshold_Value","Runtime_Min"
+"AddModuleScore","MANNE_DN",FALSE,"gmm_dist_platelet",0.61017239407881,0.192787177203918,0.137198986058302,0.324101796407186,433,2723,903,11469,"gmm_dist_platelet",-2.88020737095779,0.804464757442474

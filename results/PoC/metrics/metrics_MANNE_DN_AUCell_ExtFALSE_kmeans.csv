@@ -1,0 +1,2 @@
+"Method","Signature","Ext","Mode","AUC","F1","Prec","Rec","TP","FP","FN","TN","Threshold_Used","Threshold_Value","Runtime_Min"
+"AUCell","MANNE_DN",FALSE,"kmeans",0.601741055304836,0.129741863075196,0.0926579031740943,0.216317365269461,289,2830,1047,11362,"kmeans",-1.22821131115508,1.23507436513901

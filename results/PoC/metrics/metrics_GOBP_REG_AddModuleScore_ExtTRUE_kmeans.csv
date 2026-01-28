@@ -1,0 +1,2 @@
+"Method","Signature","Ext","Mode","AUC","F1","Prec","Rec","TP","FP","FN","TN","Threshold_Used","Threshold_Value","Runtime_Min"
+"AddModuleScore","GOBP_REG",TRUE,"kmeans",0.497523009927158,0.0838762214983713,0.0919642857142857,0.0770958083832335,103,1017,1233,13175,"kmeans",0.813406528419153,0.828300825754801
