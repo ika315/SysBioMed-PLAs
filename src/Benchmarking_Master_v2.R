@@ -189,13 +189,17 @@ if (THRESH_MODE == "youden") {
         summarise(
             Mean_Z = mean(Z_Score),
             Mean_Immune_Z = mean(Immune_Z),
-            Score_Sum = Mean_Z + Mean_Immune_Z
+            Score_Sum = Mean_Z + Mean_Immune_Z,
+            Min_Z = min(Z_Score),        # Untergrenze für Z-Score
+            Min_Immune = min(Immune_Z)   # Untergrenze für Immune Score
         )
 
     positive_cluster <- cluster_stats$Cluster[which.max(cluster_stats$Score_Sum)]
 
     pbmc$Platelet_High <- pbmc$KMeans_Cluster == positive_cluster
     pbmc$Immune_High <- pbmc$KMeans_Cluster == positive_cluster
+    THRESHOLD_Z <- cluster_stats$Min_Z[cluster_stats$Cluster == positive_cluster]
+    THRESHOLD_I <- cluster_stats$Min_Immune[cluster_stats$Cluster == positive_cluster]
 }
 
 positive_condition <- if (THRESH_MODE == "kmeans") {
