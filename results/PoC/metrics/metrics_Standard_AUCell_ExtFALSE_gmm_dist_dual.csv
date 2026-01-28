@@ -1,0 +1,2 @@
+"Method","Signature","Ext","Mode","AUC","F1","Prec","Rec","TP","FP","FN","TN","Threshold_Used","Threshold_Value","Runtime_Min"
+"AUCell","Standard",FALSE,"gmm_dist_dual",0.465871702198759,0.117195823567015,0.0819183795055109,0.205838323353293,275,3082,1061,11110,"gmm_dist_dual",0.233654439232682,1.26968859434128
