@@ -1,0 +1,2 @@
+"Method","Signature","Ext","Mode","AUC","F1","Prec","Rec","TP","FP","FN","TN","Threshold_Used","Threshold_Value","Runtime_Min"
+"AddModuleScore","GNATENKO",FALSE,"kmeans",0.759505783085861,0.00530219702738528,0.0996818663838812,0.00272353247957351,94,849,34420,90195,"kmeans",4.49299279534086,2.72700661420822
