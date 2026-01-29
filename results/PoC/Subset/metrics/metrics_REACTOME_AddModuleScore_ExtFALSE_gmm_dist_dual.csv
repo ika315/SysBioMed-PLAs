@@ -1,0 +1,2 @@
+"Method","Signature","Ext","Mode","AUC","F1","Prec","Rec","TP","FP","FN","TN","Threshold_Used","Threshold_Value","Runtime_Min"
+"AddModuleScore","REACTOME",FALSE,"gmm_dist_dual",0.478014528578277,0.120300751879699,0.0785383146986638,0.256913470115968,288,3379,833,10525,"gmm_dist_dual",0.369965439455636,0.898413058121999

@@ -1,0 +1,2 @@
+"Method","Signature","Ext","Mode","AUC","F1","Prec","Rec","TP","FP","FN","TN","Threshold_Used","Threshold_Value","Runtime_Min"
+"AddModuleScore","Standard",FALSE,"youden",0.485647216185614,0.122696411251212,0.0842490842490843,0.225691347011597,253,2750,868,11154,"youden",0.757355593015946,0.892191441853841
