@@ -21,7 +21,7 @@ library(ggrepel)
 library(harmony)
 
 
-plot_dir <- "plots"
+plot_dir <- "new_plots"
 data_path <- "data/GSM5008737_RNA_3P/"
 
 save_plot <- function(plot, filename, width = 8, height = 6) {
@@ -125,16 +125,11 @@ plot_qc_prepost <- function(seu, prefix, group.by = "donor_time") {
 }
 
 seu[["percent.mt"]] <- PercentageFeatureSet(seu, pattern = "^MT-")
-seu[["percent.ribo"]] <- PercentageFeatureSet(seu, pattern = "^RP[SL]")
-
-hb_genes <- grep("^HB", rownames(seu), value = TRUE)
-hb_genes <- hb_genes[!grepl("^HBP", hb_genes)]
-seu[["percent.hb"]] <- PercentageFeatureSet(seu, features = hb_genes)
-
 
 plot_qc_prepost(seu, "pre_QC")
 
 saveRDS(seu, file = "data/seu_before_filtering.rds")
+print("Saved seu_before_filtering.rds")
 # seu_preQC <- readRDS("data/seu_before_filtering.rds")
 seu_preQC <- seu
 
@@ -197,10 +192,8 @@ out_low_counts <- is_outlier_mad_by_group(seu$nCount_RNA, seu@$Batch, nmads = 5,
 out_low_genes <- is_outlier_mad_by_group(seu$nFeature_RNA, seu@$Batch, nmads = 5, type = "lower")
 
 out_high_mt <- is_outlier_mad_by_group(seu$percent.mt, seu@$Batch, nmads = 5, type = "upper")
-out_high_ribo <- is_outlier_mad_by_group(seu$percent.ribo, seu@$Batch, nmads = 5, type = "upper")
-out_high_hb <- is_outlier_mad_by_group(seu$percent.hb, seu@$Batch, nmads = 5, type = "upper")
 
-seu$qc_outlier <- out_low_counts | out_low_genes | out_high_mt | out_high_hb | out_high_ribo
+seu$qc_outlier <- out_low_counts | out_low_genes | out_high_mt 
 
 seu <- subset(seu, subset = !qc_outlier)
 
@@ -236,6 +229,7 @@ names(soupx_groups) <- colnames(seu)
 soupx_groups <- soupx_groups[colnames(flt)]
 
 saveRDS(seu, file = "data/seu_before_soup.rds")
+print("Saved before soup")
 # soup
 
 common_cells <- intersect(colnames(flt), colnames(seu))
@@ -287,6 +281,7 @@ seu_sx$qc_outlier <- out_low_counts | out_low_genes | out_high_mt
 seu_sx <- subset(seu_sx, subset = !qc_outlier)
 
 saveRDS(seu_sx, file = "data/seu_after_soup.rds")
+print("Saved seu_after_soup.rds")
 # clustering
 
 seu_sx <- NormalizeData(seu_sx, normalization.method = "LogNormalize")
@@ -321,6 +316,7 @@ seu_sx <- AddMetaData(seu_sx, metadata = meta_use)
 seu_sx$donor_time <- interaction(seu_sx$donor, seu_sx$time, drop = TRUE, sep = "_")
 
 saveRDS(seu_sx, file = "data/seu_before_dd.rds")
+print("Saved seu_before_dd.rds")
 # doublet detection
 sce <- as.SingleCellExperiment(seu_sx)
 sce <- scDblFinder(sce, clusters = "seurat_clusters", samples = "donor_time")
@@ -348,6 +344,7 @@ save_plot(p, "UMAP_scDblFinder_score.png")
 
 table(seu_sx$scDblFinder_class)
 saveRDS(seu_sx, file = "data/seu_after_dd.rds")
+print("Saved seu_after_dd.rds")
 #print(
   #DimPlot(seu_sx, group.by = "scDblFinder_class", reduction = "umap")
 #)
@@ -553,5 +550,6 @@ p <- VlnPlot(
 
 save_plot(p, "QC_pre_violin_count.png", width = 10, height = 5)
 
-saveRDS(seu_sx, file = "data/seu_sx_integration.rds")
+saveRDS(seu_sx, file = "data/seu_sx_integration_regex_bug.rds")
+print("Saved seu_sx_integration_regex_bug.rds")
 # seu_sx <- readRDS("data/seu_sx_final_new.rds")
