@@ -455,7 +455,8 @@ p15 <- ggplot(sweep_res, aes(x = Recall, y = Precision)) +
   geom_point(aes(alpha = (delta == 0)), size = 3) + 
   theme_minimal() + 
   labs(title = "Threshold Stability Sweep",
-       subtitle = "Roter Punkt markiert den gewählten optimalen Threshold") +
+       subtitle = "Red dot indicates the selected optimal threshold",
+       x = "Recall (Sensitivity)", y = "Precision") +
   guides(alpha = "none")
 
 print(p15)

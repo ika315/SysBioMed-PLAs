@@ -21,14 +21,13 @@ USE_EXTENSION  <- if(length(args) >= 4) as.logical(args[4]) else FALSE
 THRESH_MODE    <- if(length(args) >= 5) args[5] else "kmeans" 
 
 # --- KONFIGURATION ---
-#GT_COLUMN    <- "pla.status"
 GT_COLUMN    <- "pla_status"
 POSITIVE_VAL <- "PLA"
 #PATH_DATA    <- "~/SysBioMed-PLAs/data/seu_sx_integration.rds"
 PATH_DATA <- "~/SysBioMed-PLAs/data/gated_IMPACT.rds"
 
 # --- ORDNERSTRUKTUR AUTOMATISCH ERSTELLEN ---
-OUT_DIR <- paste0("plots/PoC/Platelet_Main/", SIG_NAME, "/", METHOD_NAME, "_Ext", USE_EXTENSION, "_", THRESH_MODE, "/")
+OUT_DIR <- paste0("plots/PoC/Platelet_Main/Subset/", SIG_NAME, "/", METHOD_NAME, "_Ext", USE_EXTENSION, "_", THRESH_MODE, "/")
 dir.create(OUT_DIR, recursive = TRUE, showWarnings = FALSE)
 dir.create("results/PoC/metrics", recursive = TRUE, showWarnings = FALSE)
 dir.create("results/PoC/celltype_data", recursive = TRUE, showWarnings = FALSE)
@@ -43,6 +42,15 @@ pbmc_subset <- subset(pbmc, subset = sequenced != "september24")
 print(paste("Zellen vor Filter:", ncol(pbmc)))
 print(paste("Zellen nach Filter:", ncol(pbmc_subset)))
 pbmc <- pbmc_subset
+
+valid_samples <- c("UKA48_T0H", "UKA48_T24H", "UKA48_T48H", "UKA48_T72H", 
+                   "UKA53_T24H", "UKA53_T48H", "UKA53_T72H", 
+                   "UKA35_T24H", "UKA35_T48", "UKA40_Healthy")
+
+pbmc_clean <- subset(pbmc, subset = sample_all %in% valid_samples)
+message("Zellen im PoC-Gesamt: ", ncol(pbmc))
+message("Zellen im sauberen Subset: ", ncol(pbmc_clean))
+pbmc <- pbmc_clean
 
 #new_metadata <- read.csv("~/SysBioMed-PLAs/data/external_dataset_pla-status_metatable.csv", row.names = 1)
 #rownames(new_metadata) <- new_metadata$barcodes_clean
@@ -262,7 +270,7 @@ write.csv(data.frame(
     Threshold_Value = THRESHOLD_Z,
     Runtime_Min = runtime_min
 ),
-paste0("results/PoC/metrics/metrics_", SIG_NAME, "_", METHOD_NAME, "_Ext", USE_EXTENSION, "_", THRESH_MODE, ".csv"), row.names = FALSE)
+paste0("results/PoC/Subset/metrics/metrics_", SIG_NAME, "_", METHOD_NAME, "_Ext", USE_EXTENSION, "_", THRESH_MODE, ".csv"), row.names = FALSE)
 #removed group.by(celltype.l3)
 ct_data <- pbmc@meta.data %>% 
     group_by(celltype_clean) %>% 
@@ -285,7 +293,7 @@ ct_data <- pbmc@meta.data %>%
     )
 
 write.csv(ct_data, 
-          paste0("results/PoC/celltype_data/ct_", SIG_NAME, "_", METHOD_NAME, "_Ext", USE_EXTENSION, "_", THRESH_MODE, ".csv"), 
+          paste0("results/PoC/Subset/celltype_data/ct_", SIG_NAME, "_", METHOD_NAME, "_Ext", USE_EXTENSION, "_", THRESH_MODE, ".csv"), 
           row.names = FALSE)
 
 # --- PLOTS ---

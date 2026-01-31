@@ -10,9 +10,9 @@ library(RColorBrewer)
 library(ggrepel)
 
 # Pfade
-METRICS_DIR <- "results/metrics/"
-CT_DIR      <- "results/celltype_data/"
-BASE_OUT    <- "plots/Global_Comparison/"
+METRICS_DIR <- "results/PoC/Subset/metrics/"
+CT_DIR      <- "results/PoC/Subset/celltype_data/"
+BASE_OUT    <- "plots/PoC/Subset/Global_Comparison/"
 
 dir.create(BASE_OUT, recursive = TRUE, showWarnings = FALSE)
 dir.create(file.path(BASE_OUT, "Heatmaps"), showWarnings = FALSE)
@@ -130,7 +130,7 @@ print(p4)
 dev.off()  
 
 # --- 4. HEATMAPS: ZELLTYP PERFORMANCE ---
-df_heatmap <- all_ct %>% filter(Ext == TRUE)
+df_heatmap <- all_ct %>% filter(Ext == FALSE)
 
 create_presentation_heatmap <- function(data, ct_col, metric, filename) {
   if(!ct_col %in% colnames(data)) {
@@ -168,8 +168,8 @@ create_presentation_heatmap <- function(data, ct_col, metric, filename) {
   dev.off()
 }
 
-target_cell_columns <- c("celltype_clean", "celltype.l3")
-target_modes <- c("youden", "gmm_dist_dual", "gmm_dist_platelet")
+target_cell_columns <- c("celltype_clean")  #"celltype.l3"
+target_modes <- c("youden", "gmm_dist_dual", "gmm_dist_platelet", "kmeans")
 target_metrics <- c("FP", "TP", "Balanced_Accuracy", "Mean_Z")
 
 for(ct_col in target_cell_columns) {
@@ -203,7 +203,7 @@ for(ct_col in target_cell_columns) {
 #dev.off()
 
 png(file.path(BASE_OUT, "PR_Comparison_Incl_Youden.png"), 1400, 900, res = 120)
-print(ggplot(filter(all_metrics, Mode %in% c("youden", "gmm_dist_dual", "gmm_dist_platelet")), 
+print(ggplot(filter(all_metrics, Mode %in% c("youden", "gmm_dist_dual", "gmm_dist_platelet", "kmeans")), 
              aes(x = Prec, y = Rec, color = Mode, shape = Method)) +
   geom_point(aes(size = F1), alpha = 0.7) +
   facet_grid(Ext ~ Signature) + theme_bw() + scale_color_brewer(palette = "Set1") +
@@ -211,10 +211,11 @@ print(ggplot(filter(all_metrics, Mode %in% c("youden", "gmm_dist_dual", "gmm_dis
 dev.off()
 
 png(file.path(BASE_OUT, "PR_Comparison_GMM_Only.png"), 1400, 900, res = 120)
-print(ggplot(filter(all_metrics, Mode %in% c("gmm_dist_dual", "gmm_dist_platelet")), 
+print(ggplot(filter(all_metrics, Mode %in% c("gmm_dist_dual", "gmm_dist_platelet", "kmeans")), 
              aes(x = Prec, y = Rec, color = Mode, shape = Method)) +
   geom_point(aes(size = F1), alpha = 0.7) +
-  facet_grid(Ext ~ Signature) + theme_bw() + scale_color_manual(values=c("#377EB8", "#4DAF4A")) +
+  facet_grid(Ext ~ Signature) + theme_bw() + 
+  scale_color_manual(values=c("#377EB8", "#4DAF4A", "#E41A1C")) +
   labs(title = "Unsupervised Discovery: Platelet vs. Dual-Gate"))
 dev.off()
 
@@ -222,17 +223,17 @@ dev.off()
 dir.create(file.path(BASE_OUT, "Methods_Detail"), showWarnings = FALSE)
 
 for(meth in unique(all_metrics$Method)) {
-  meth_data <- all_metrics %>% filter(Method == meth, Ext == TRUE)
+  meth_data <- all_metrics %>% filter(Method == meth, Ext == FALSE)
   if(nrow(meth_data) == 0) next
   
   png(file.path(BASE_OUT, "Methods_Detail", paste0("Profile_", meth, ".png")), 1200, 800, res = 120)
   p <- ggplot(meth_data, aes(x = Rec, y = Prec, color = Signature)) +
-    geom_point(aes(size = F1), alpha = 0.8) + # Punkte etwas transparenter für Überlagerungen
+    geom_point(aes(size = F1), alpha = 0.8) + 
     facet_wrap(~Mode) + 
     theme_bw() + 
-    scale_size_continuous(range = c(2, 8)) + # Größere Punkte für bessere Sichtbarkeit
+    scale_size_continuous(range = c(2, 8)) + 
     labs(title = paste("Method Performance Profile:", meth), 
-         subtitle = "Extended Lists Only | Faceted by Threshold Mode",
+         subtitle = "Baseline Lists (No Extension) | Faceted by Threshold Mode",
          x = "Recall", y = "Precision",
          size = "F1-Score", color = "Gene Signature") +
     theme(legend.position = "right")
@@ -244,7 +245,7 @@ for(meth in unique(all_metrics$Method)) {
 # --- 7. SIGNATURE RANKING (Lollipop) ---
 png(file.path(BASE_OUT, "Signature_Performance_Ranking.png"), 1200, 800, res = 120)
 summary_perf <- all_metrics %>%
-  filter(Ext == TRUE) %>%
+  filter(Ext == FALSE) %>%
   group_by(Signature, Method) %>%
   summarise(mean_F1 = mean(F1, na.rm=T), .groups = "drop")
 
@@ -253,7 +254,7 @@ print(ggplot(summary_perf, aes(x = reorder(Signature, mean_F1), y = mean_F1, col
   geom_point(size = 4) +
   coord_flip() +
   theme_minimal() +
-  labs(title = "Average F1-Score per Signature (Extended Lists)",
+  labs(title = "Average F1-Score per Signature (Baseline Lists)",
        x = "Signature", y = "Mean F1-Score"))
 dev.off()
 
