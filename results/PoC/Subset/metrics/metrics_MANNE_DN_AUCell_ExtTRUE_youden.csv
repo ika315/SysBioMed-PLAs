@@ -1,0 +1,2 @@
+"Method","Signature","Ext","Mode","AUC","F1","Prec","Rec","TP","FP","FN","TN","Threshold_Used","Threshold_Value","Runtime_Min"
+"AUCell","MANNE_DN",TRUE,"youden",0.594198596672583,0.165450621724386,0.0934959349593496,0.718108831400535,805,7805,316,6099,"youden",-0.407288654056102,1.10076144138972

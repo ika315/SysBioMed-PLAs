@@ -1,0 +1,2 @@
+"Method","Signature","Ext","Mode","AUC","F1","Prec","Rec","TP","FP","FN","TN","Threshold_Used","Threshold_Value","Runtime_Min"
+"AddModuleScore","REACTOME",FALSE,"kmeans",0.478014528578277,0.120730397422127,0.0795132993774759,0.250669045495094,281,3253,840,10651,"kmeans",-0.176100838478582,0.932370777924856

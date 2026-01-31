@@ -1,0 +1,2 @@
+"Method","Signature","Ext","Mode","AUC","F1","Prec","Rec","TP","FP","FN","TN","Threshold_Used","Threshold_Value","Runtime_Min"
+"AddModuleScore","MANNE_DN",FALSE,"youden",0.58344308724846,0.168124536693847,0.100817923186344,0.505798394290812,567,5057,554,8847,"youden",0.0825561686048893,0.884119447072347
