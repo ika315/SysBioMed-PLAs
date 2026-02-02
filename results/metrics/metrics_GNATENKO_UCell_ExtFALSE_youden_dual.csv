@@ -1,0 +1,2 @@
+"Method","Signature","Ext","Mode","AUC","F1","Prec","Rec","TP","FP","FN","TN","Threshold_Used","Threshold_Value","Runtime_Min"
+"UCell","GNATENKO",FALSE,"youden_dual",0.793149488753517,0.860751102124698,0.872678391396886,0.849145448203697,38952,5683,6920,99048,"youden_dual",-1.17607407694552,33.5855914711952
